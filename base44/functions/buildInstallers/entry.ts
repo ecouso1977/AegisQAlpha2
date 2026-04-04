@@ -40,39 +40,14 @@ Deno.serve(async (req) => {
 
     const config = installerConfigs[platform];
 
-    // Create a mock build record in BuildQueue
-    const buildRecord = await base44.entities.BuildQueue.create({
-      app_name: 'Aegis Quantum',
-      app_version: version,
-      status: 'running',
-      platform: platform.charAt(0).toUpperCase() + platform.slice(1),
-      scheduled_time: new Date().toISOString(),
-      triggered_by: 'manual',
-      enabled_plugins: [],
-      marketplace_selected: [],
-    });
-
     // Simulate build process
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Generate a mock file URL (in production, upload to storage)
     const fileUrl = `${Deno.env.get('BASE44_APP_ID')}/installers/${config.filename}`;
 
-    // Update build record with success
-    await base44.entities.BuildQueue.update(buildRecord.id, {
-      status: 'completed',
-      result: {
-        success: true,
-        file_url: fileUrl,
-        file_size: config.size,
-        completed_at: new Date().toISOString(),
-        duration_ms: 2000,
-      },
-    });
-
     return Response.json({
       success: true,
-      buildId: buildRecord.id,
       filename: config.filename,
       fileUrl: fileUrl,
       size: config.size,
