@@ -51,6 +51,7 @@ export default function BuildInstallerPanel() {
   const [allowRuntimePlugins, setAllowRuntimePlugins] = useState(true);
   const [createShortcut, setCreateShortcut] = useState(true);
   const [signInstaller, setSignInstaller] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const togglePlugin = (id) => {
     const plugin = BUNDLED_PLUGINS.find((p) => p.id === id);
@@ -164,7 +165,16 @@ Code Signed: ${signInstaller}
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 bg-[#0d0f14]">
+    <>
+      <BuildPreviewModal
+        isOpen={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        appName={appName}
+        appVersion={appVersion}
+        enabledPlugins={[...enabledPlugins]}
+        marketplaceSelected={[...marketplaceSelected]}
+      />
+      <div className="flex-1 overflow-y-auto p-6 bg-[#0d0f14]">
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <div>
@@ -289,12 +299,23 @@ Code Signed: ${signInstaller}
           <span className="text-sm font-semibold text-[#00c896]">~{totalSizeMb} MB</span>
         </div>
 
-        {/* Build button */}
-        <button onClick={build} disabled={building}
-          className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#00c896] hover:bg-[#00b084] disabled:opacity-50 text-black font-bold rounded-xl transition-colors text-base">
-          {building ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-          {building ? "Building Installer..." : `Build ${platform.label} Installer`}
-        </button>
+        {/* Preview & Build buttons */}
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => setPreviewOpen(true)}
+            className="flex items-center justify-center gap-2 py-3 bg-[#1a2a3a] border border-[#00c896] text-[#00c896] font-bold rounded-xl hover:bg-[#00c896]/10 transition-colors text-sm"
+          >
+            <Eye className="w-4 h-4" /> Preview Build
+          </button>
+          <button
+            onClick={build}
+            disabled={building}
+            className="flex items-center justify-center gap-2 py-3 bg-[#00c896] hover:bg-[#00b084] disabled:opacity-50 text-black font-bold rounded-xl transition-colors text-base"
+          >
+            {building ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+            {building ? "Building..." : "Build"}
+          </button>
+        </div>
 
         {/* Build log */}
         {buildLogs.length > 0 && (
@@ -319,6 +340,7 @@ Code Signed: ${signInstaller}
           </div>
         )}
       </div>
-    </div>
-  );
-}
+      </div>
+      </>
+      );
+      }
