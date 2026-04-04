@@ -9,15 +9,34 @@ Deno.serve(async (req) => {
     }
 
     const payload = await req.json();
+    console.log('Payload received:', JSON.stringify(payload));
+    
     const { appName, appVersion, enabledPlugins, marketplaceSelected, createShortcut, allowRuntimePlugins, signInstaller } = payload;
 
-    if (!appName || !appVersion || !enabledPlugins || !Array.isArray(enabledPlugins)) {
-      return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!appName || !appVersion || !enabledPlugins) {
+      console.log('Validation failed:', { appName, appVersion, enabledPlugins });
+      return Response.json({ error: 'Missing required fields: appName, appVersion, enabledPlugins' }, { status: 400 });
+    }
+
+    if (!Array.isArray(enabledPlugins)) {
+      console.log('enabledPlugins is not an array:', typeof enabledPlugins);
+      return Response.json({ error: 'enabledPlugins must be an array' }, { status: 400 });
+    }
+
+    if (!Array.isArray(marketplaceSelected)) {
+      console.log('marketplaceSelected is not an array, converting to empty array');
+      payload.marketplaceSelected = [];
     }
 
     // Create temp directory for build artifacts
     const tmpDir = `/tmp/aegis-build-${Date.now()}`;
-    await Deno.mkdir(tmpDir, { recursive: true });
+    try {
+      await Deno.mkdir(tmpDir, { recursive: true });
+      console.log('Created temp directory:', tmpDir);
+    } catch (dirError) {
+      console.error('Failed to create directory:', dirError);
+      throw new Error(`Directory creation failed: ${dirError.message}`);
+    }
 
     // Create package.json
     const packageJson = {
@@ -64,7 +83,13 @@ Deno.serve(async (req) => {
       packageJson.build.win.sign = true;
     }
 
-    await Deno.writeTextFile(`${tmpDir}/package.json`, JSON.stringify(packageJson, null, 2));
+    try {
+      await Deno.writeTextFile(`${tmpDir}/package.json`, JSON.stringify(packageJson, null, 2));
+      console.log('Wrote package.json');
+    } catch (writeError) {
+      console.error('Failed to write package.json:', writeError);
+      throw new Error(`Failed to write package.json: ${writeError.message}`);
+    }
 
     // Create minimal electron main.js
     const mainJs = `
@@ -83,7 +108,13 @@ function createWindow() {
 app.on('ready', createWindow);
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 `;
-    await Deno.writeTextFile(`${tmpDir}/main.js`, mainJs);
+    try {
+      await Deno.writeTextFile(`${tmpDir}/main.js`, mainJs);
+      console.log('Wrote main.js');
+    } catch (writeError) {
+      console.error('Failed to write main.js:', writeError);
+      throw new Error(`Failed to write main.js: ${writeError.message}`);
+    }
 
     // Create index.html
     const indexHtml = `
@@ -103,7 +134,13 @@ app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(
 </body>
 </html>
 `;
-    await Deno.writeTextFile(`${tmpDir}/index.html`, indexHtml);
+    try {
+      await Deno.writeTextFile(`${tmpDir}/index.html`, indexHtml);
+      console.log('Wrote index.html');
+    } catch (writeError) {
+      console.error('Failed to write index.html:', writeError);
+      throw new Error(`Failed to write index.html: ${writeError.message}`);
+    }
 
     // Create metadata file
     const metadata = {
@@ -115,7 +152,13 @@ app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(
       platform: 'windows',
       architecture: 'x64'
     };
-    await Deno.writeTextFile(`${tmpDir}/BUILD_METADATA.json`, JSON.stringify(metadata, null, 2));
+    try {
+      await Deno.writeTextFile(`${tmpDir}/BUILD_METADATA.json`, JSON.stringify(metadata, null, 2));
+      console.log('Wrote BUILD_METADATA.json');
+    } catch (writeError) {
+      console.error('Failed to write BUILD_METADATA.json:', writeError);
+      throw new Error(`Failed to write BUILD_METADATA.json: ${writeError.message}`);
+    }
 
     // Simulate build steps (in production, would call electron-builder CLI)
     const logs = [
@@ -146,7 +189,8 @@ app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(
     });
 
   } catch (error) {
-    console.error('Build error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('Build error:', error?.message || error);
+    console.error('Error stack:', error?.stack || 'no stack');
+    return Response.json({ error: error?.message || 'Unknown error occurred', details: String(error) }, { status: 500 });
   }
 });
