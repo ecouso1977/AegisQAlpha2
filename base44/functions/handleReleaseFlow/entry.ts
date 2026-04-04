@@ -16,29 +16,26 @@ Deno.serve(async (req) => {
     }
 
     const githubToken = Deno.env.get('GITHUB_TOKEN');
-    if (!githubToken && action !== 'bump-version') {
+    if (!githubToken && !action.startsWith('bump-')) {
       return Response.json({ error: 'GitHub token not configured' }, { status: 400 });
     }
 
     let result = {};
 
     // Bump version (semantic versioning)
-    if (action === 'bump-version') {
+    if (action.startsWith('bump-')) {
       const [major, minor, patch] = currentVersion.split('.').map(Number);
+      const bumpType = action.replace('bump-', '');
       let bumped;
       
-      switch (action === 'bump-patch' ? 'patch' : action) {
-        case 'patch':
-          bumped = `${major}.${minor}.${patch + 1}`;
-          break;
-        case 'minor':
-          bumped = `${major}.${minor + 1}.0`;
-          break;
-        case 'major':
-          bumped = `${major + 1}.0.0`;
-          break;
-        default:
-          bumped = newVersion;
+      if (bumpType === 'patch') {
+        bumped = `${major}.${minor}.${patch + 1}`;
+      } else if (bumpType === 'minor') {
+        bumped = `${major}.${minor + 1}.0`;
+      } else if (bumpType === 'major') {
+        bumped = `${major + 1}.0.0`;
+      } else {
+        bumped = currentVersion;
       }
       
       result.nextVersion = bumped;
