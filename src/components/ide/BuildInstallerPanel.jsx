@@ -383,3 +383,5 @@ Code Signed: ${signInstaller}
             {activeTab === "history" && <BuildHistoryTab appName={appName} appVersion={appVersion} />}
             </div>
             </>
+            );
+            }
