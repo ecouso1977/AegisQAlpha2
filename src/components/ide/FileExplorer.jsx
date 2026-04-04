@@ -4,7 +4,6 @@ import {
   ChevronRight, ChevronDown, Pencil, Check, X, Search, FileText,
   File, FolderGit2, Lock
 } from "lucide-react";
-import { useState, useEffect } from "react";
 import PasswordProtectionModal from "./PasswordProtectionModal";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

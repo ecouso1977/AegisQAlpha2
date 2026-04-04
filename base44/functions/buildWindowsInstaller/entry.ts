@@ -9,9 +9,9 @@ Deno.serve(async (req) => {
     }
 
     const payload = await req.json();
-    const { appName, appVersion, enabledPlugins, marketplaceSelected, createShortcut, allowRuntimePlugins } = payload;
+    const { appName, appVersion, enabledPlugins, marketplaceSelected, createShortcut, allowRuntimePlugins, signInstaller } = payload;
 
-    if (!appName || !appVersion || !enabledPlugins) {
+    if (!appName || !appVersion || !enabledPlugins || !Array.isArray(enabledPlugins)) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -59,6 +59,10 @@ Deno.serve(async (req) => {
         'electron-builder': '^24.0.0'
       }
     };
+
+    if (signInstaller && packageJson.build.win) {
+      packageJson.build.win.sign = true;
+    }
 
     await Deno.writeTextFile(`${tmpDir}/package.json`, JSON.stringify(packageJson, null, 2));
 
