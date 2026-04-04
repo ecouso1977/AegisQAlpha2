@@ -51,6 +51,10 @@ export default function BuildInstallerPanel({ files = [], onFileChange, onBuildS
       const response = await base44.functions.invoke('buildInstallers', { platform: platform.id });
       setBuilds((prev) => ({ ...prev, [platform.id]: response.data }));
       if (onBuildSuccess) onBuildSuccess();
+      // Auto-download on build success
+      setTimeout(() => {
+        window.open(response.data.fileUrl, '_blank');
+      }, 500);
     } catch (error) {
       console.error('Build failed:', error);
     } finally {
@@ -66,6 +70,10 @@ export default function BuildInstallerPanel({ files = [], onFileChange, onBuildS
     if (build.fileUrl) {
       window.open(build.fileUrl, "_blank");
     }
+  };
+
+  const handleBuildAndDownload = async (platform) => {
+    await handleBuild(platform);
   };
 
   return (
@@ -140,19 +148,19 @@ export default function BuildInstallerPanel({ files = [], onFileChange, onBuildS
                   </button>
                 ) : (
                   <button
-                    onClick={() => handleBuild(platform)}
+                    onClick={() => handleBuildAndDownload(platform)}
                     disabled={isBuilding}
                     className="flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors text-sm"
                   >
                     {isBuilding ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Building...
+                        Building & Downloading...
                       </>
                     ) : (
                       <>
                         <Package className="w-4 h-4" />
-                        Build Installer
+                        Build & Download
                       </>
                     )}
                   </button>
