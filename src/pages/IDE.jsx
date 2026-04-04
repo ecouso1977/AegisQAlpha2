@@ -12,6 +12,7 @@ import CloudPanel from "../components/ide/CloudPanel";
 import APIVault from "../components/ide/APIVault";
 import PluginsPanel from "../components/ide/PluginsPanel";
 import DebugPanel from "../components/ide/DebugPanel";
+import GitPanel from "../components/ide/GitPanel";
 
 const DEFAULT_FILES = [
   {
@@ -195,6 +196,12 @@ export default function IDE() {
 
   const debugLine = isDebugging && debugSession?.steps?.[debugSession.currentIndex]?.line;
 
+  const handleClone = (clonedFiles, label) => {
+    setFiles(clonedFiles);
+    setActiveFileId(clonedFiles[0]?.id || null);
+    setActiveTab("Code");
+  };
+
   const activeFile = files.find((f) => f.id === activeFileId);
 
   const updateFileContent = (content) => {
@@ -262,6 +269,13 @@ export default function IDE() {
         <ActivityBar active={activityTab} onChange={setActivityTab} />
 
         {/* Left Panel (Explorer / Search / etc) */}
+        {activityTab === "git" && (
+          <GitPanel
+            onClone={handleClone}
+            files={files}
+            activeFile={activeFile}
+          />
+        )}
         {activityTab === "explorer" && (
           <FileExplorer
             files={files}
