@@ -3,6 +3,7 @@ import { Code2, Eye, LayoutDashboard, X, FileCode, Wand2 } from "lucide-react";
 import IntelligentRefactorModal from "./IntelligentRefactorModal";
 import CodeEditor from "./CodeEditor";
 import AdvancedTerminal from "./AdvancedTerminal";
+import DebugOverlay from "./DebugOverlay";
 import LivePreviewPanel from "./LivePreviewPanel";
 import WorkspaceDashboard from "./WorkspaceDashboard";
 
@@ -23,6 +24,7 @@ export default function EditorTabs({
   onChange, breakpoints, onToggleBreakpoint, debugLine,
   remoteCursors, onCursorMove, terminalOutput, onClear, isRunning,
   collabSession, onRun, onPipeToEditor,
+  debugSession, isDebugging, onDebugStart, onDebugStop, onDebugStep, onDebugContinue,
 }) {
   const [viewTab, setViewTab] = useState("code");
   const [openIds, setOpenIds] = useState(() => activeFileId ? [activeFileId] : []);
@@ -119,18 +121,28 @@ export default function EditorTabs({
       {/* Tab content */}
       {viewTab === "code" && (
         <>
-          <CodeEditor
-            key={activeFileId}
-            file={activeFile}
-            onChange={onChange}
-            breakpoints={breakpoints}
-            onToggleBreakpoint={onToggleBreakpoint}
-            debugLine={debugLine}
-            remoteCursors={remoteCursors}
-            onCursorMove={onCursorMove}
-            initialScrollTop={scrollPositions.current[activeFileId] || 0}
-            onScroll={(top) => handleEditorScroll(activeFileId, top)}
-          />
+          <div className="relative flex-1 overflow-hidden">
+            <CodeEditor
+              key={activeFileId}
+              file={activeFile}
+              onChange={onChange}
+              breakpoints={breakpoints}
+              onToggleBreakpoint={onToggleBreakpoint}
+              debugLine={debugLine}
+              remoteCursors={remoteCursors}
+              onCursorMove={onCursorMove}
+              initialScrollTop={scrollPositions.current[activeFileId] || 0}
+              onScroll={(top) => handleEditorScroll(activeFileId, top)}
+            />
+            <DebugOverlay
+              session={debugSession}
+              isDebugging={isDebugging}
+              onStart={onDebugStart}
+              onStop={onDebugStop}
+              onStep={onDebugStep}
+              onContinue={onDebugContinue}
+            />
+          </div>
           <AdvancedTerminal
             output={terminalOutput}
             onClear={onClear}

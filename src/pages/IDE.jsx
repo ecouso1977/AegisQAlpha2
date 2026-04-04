@@ -374,6 +374,12 @@ export default function IDE() {
                 const updated = (activeFile?.content || "") + "\n# Terminal output:\n" + text.split("\n").map(l => "# " + l).join("\n");
                 updateFileContent(updated);
               }}
+              debugSession={debugSession}
+              isDebugging={isDebugging}
+              onDebugStart={startDebug}
+              onDebugStop={stopDebug}
+              onDebugStep={stepDebug}
+              onDebugContinue={continueDebug}
             />
           )}
           {activeTab === "Debug" && (
