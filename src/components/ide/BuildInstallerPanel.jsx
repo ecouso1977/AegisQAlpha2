@@ -8,6 +8,7 @@ const INSTALLERS = [
     size: "142 MB",
     ext: ".exe",
     version: "1.0.0",
+    downloadUrl: "https://releases.aegisquantum.dev/aegis-quantum-1.0.0-win-x64.exe",
   },
   {
     id: "mac",
@@ -16,6 +17,7 @@ const INSTALLERS = [
     size: "158 MB",
     ext: ".dmg",
     version: "1.0.0",
+    downloadUrl: "https://releases.aegisquantum.dev/aegis-quantum-1.0.0-mac-universal.dmg",
   },
   {
     id: "linux",
@@ -24,18 +26,13 @@ const INSTALLERS = [
     size: "135 MB",
     ext: ".AppImage",
     version: "1.0.0",
+    downloadUrl: "https://releases.aegisquantum.dev/aegis-quantum-1.0.0-linux-x64.AppImage",
   },
 ];
 
 export default function BuildInstallerPanel() {
   const handleDownload = (installer) => {
-    const filename = `aegis-quantum-${installer.version}${installer.ext}`;
-    // In production, this would be a real download URL
-    const url = `/downloads/${filename}`;
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
+    window.open(installer.downloadUrl, "_blank");
   };
 
   return (
