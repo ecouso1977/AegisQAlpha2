@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useWebSocketStream } from "../../hooks/useWebSocketStream";
 import { Container, Database, Cpu, Play, Square, RefreshCw, Plus, Trash2, CheckCircle, XCircle, Clock, Code2, Globe, ChevronDown } from "lucide-react";
 
 const DEV_ENV_TEMPLATES = [
@@ -36,6 +37,44 @@ const INITIAL_ENVS = [
   { id: "2", name: "PostgreSQL 16", templateId: "pg", type: "db", status: "running", port: 5432, created: "5 min ago" },
   { id: "3", name: "Redis Cache", templateId: "redis", type: "db", status: "stopped", port: 6379, created: "10 min ago" },
 ];
+
+function ContainerLogStream({ env }) {
+  // Real endpoint: ws://localhost:{port}/__logs or your container orchestrator
+  const wsUrl = env.status === "running" ? `ws://localhost:${env.port || 9999}/__aq_logs/${env.id}` : null;
+  const fallback = [
+    `[${new Date().toLocaleTimeString()}] Container ${env.name} starting...`,
+    `[${new Date().toLocaleTimeString()}] Pulling image layers...`,
+    `[${new Date().toLocaleTimeString()}] Network bridge assigned: 172.17.0.${Math.floor(Math.random() * 100 + 2)}`,
+    `[${new Date().toLocaleTimeString()}] Port :${env.port} bound successfully`,
+    `[${new Date().toLocaleTimeString()}] ✅ ${env.name} is healthy and accepting connections`,
+    `[${new Date().toLocaleTimeString()}] Listening on 0.0.0.0:${env.port}`,
+  ];
+  const { lines, status } = useWebSocketStream(wsUrl, fallback, { fallbackDelay: 600 });
+  const endRef = useRef(null);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [lines]);
+
+  return (
+    <div className="border-t border-[#1e2330] px-4 pb-3">
+      <div className="flex items-center gap-2 mt-3 mb-2">
+        <div className={`w-2 h-2 rounded-full ${
+          status === "open" ? "bg-[#00c896] animate-pulse" :
+          status === "simulated" ? "bg-yellow-400 animate-pulse" : "bg-gray-500"
+        }`} />
+        <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Container Logs</span>
+        <span className="ml-auto text-xs text-gray-600">
+          {status === "open" ? "⚡ WebSocket" : status === "simulated" ? "📡 Demo" : ""}
+        </span>
+      </div>
+      <div className="bg-[#080a0f] rounded-lg p-3 max-h-40 overflow-y-auto font-mono text-xs space-y-0.5">
+        {lines.map((line, i) => (
+          <div key={i} className={line.includes("✅") ? "text-[#00c896]" : line.includes("ERROR") || line.includes("error") ? "text-red-400" : "text-gray-300"}>{line}</div>
+        ))}
+        {lines.length === 0 && <div className="text-gray-600">Waiting for log stream...</div>}
+        <div ref={endRef} />
+      </div>
+    </div>
+  );
+}
 
 export default function InfraPanel() {
   const [envs, setEnvs] = useState(INITIAL_ENVS);
@@ -187,6 +226,9 @@ export default function InfraPanel() {
                     </button>
                   </div>
                 </div>
+                {dockerPreview === env.id && (
+                  <ContainerLogStream env={env} />
+                )}
                 {dockerPreview === env.id && dockerfile && (
                   <div className="border-t border-[#1e2330] px-4 pb-4">
                     <div className="text-xs text-gray-500 mb-2 mt-3">Generated Dockerfile</div>
