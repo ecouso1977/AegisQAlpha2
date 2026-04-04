@@ -11,6 +11,7 @@ import DeployPanel from "../components/ide/DeployPanel";
 import CloudPanel from "../components/ide/CloudPanel";
 import APIVault from "../components/ide/APIVault";
 import PluginsPanel from "../components/ide/PluginsPanel";
+import DebugPanel from "../components/ide/DebugPanel";
 
 const DEFAULT_FILES = [
   {
@@ -80,7 +81,25 @@ print("Sorted:", sorted(data))
   },
 ];
 
-const MAIN_TABS = ["Code", "Infra", "Deploy", "Cloud", "API Vault", "Plugins"];
+const MAIN_TABS = ["Code", "Debug", "Infra", "Deploy", "Cloud", "API Vault", "Plugins"];
+
+const DEBUGGER_INJECTOR = `
+import sys as __sys__, json as __json__
+__debug_steps__ = []
+def __tracer__(frame, event, arg):
+    if event == 'line':
+        try:
+            locs = {k: repr(v) for k, v in frame.f_locals.items() if not k.startswith('__')}
+            __debug_steps__.append({'line': frame.f_lineno - __offset__, 'locals': locs, 'func': frame.f_code.co_name})
+        except: pass
+    return __tracer__
+__sys__.settrace(__tracer__)
+`;
+
+const DEBUGGER_FOOTER = `
+__sys__.settrace(None)
+print('__AQ_DEBUG__:' + __json__.dumps(__debug_steps__))
+`;
 
 export default function IDE() {
   const [files, setFiles] = useState(DEFAULT_FILES);
@@ -94,6 +113,87 @@ export default function IDE() {
   const [chatOpen, setChatOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Code");
   const [activityTab, setActivityTab] = useState("explorer");
+  const [breakpoints, setBreakpoints] = useState(new Set());
+  const [debugSession, setDebugSession] = useState(null);
+  const [isDebugging, setIsDebugging] = useState(false);
+
+  const toggleBreakpoint = (line) => {
+    setBreakpoints((prev) => {
+      const next = new Set(prev);
+      if (next.has(line)) next.delete(line); else next.add(line);
+      return next;
+    });
+  };
+
+  const startDebug = async () => {
+    if (!activeFile) return;
+    setActiveTab("Debug");
+    setIsDebugging(true);
+    setDebugSession({ loading: true, steps: [], currentIndex: 0 });
+    const OFFSET = 8; // injector header lines
+    const injectedCode =
+      DEBUGGER_INJECTOR.replace('__offset__', String(OFFSET)) +
+      activeFile.content +
+      DEBUGGER_FOOTER;
+    try {
+      const res = await fetch("https://emkc.org/api/v2/piston/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ language: "python", version: "3.10.0", files: [{ name: activeFile.name, content: injectedCode }] }),
+      });
+      const data = await res.json();
+      const output = data.run?.output || "";
+      const stderr = data.run?.stderr || "";
+      const debugLine = output.split("\n").find((l) => l.startsWith("__AQ_DEBUG__:"));
+      if (debugLine) {
+        const steps = JSON.parse(debugLine.replace("__AQ_DEBUG__:", ""));
+        const bpSet = breakpoints.size > 0 ? breakpoints : null;
+        const filtered = bpSet ? steps.filter((s) => bpSet.has(s.line) || true) : steps;
+        setDebugSession({ loading: false, steps: filtered, currentIndex: 0 });
+      } else {
+        const errMsg = stderr || "No debug output — check your code for syntax errors.";
+        setDebugSession({ loading: false, steps: [], currentIndex: 0, error: errMsg });
+        setIsDebugging(false);
+      }
+    } catch (e) {
+      setDebugSession({ loading: false, steps: [], currentIndex: 0, error: "Failed to reach execution runtime." });
+      setIsDebugging(false);
+    }
+  };
+
+  const stopDebug = () => { setIsDebugging(false); setDebugSession(null); };
+
+  const stepDebug = (type, targetIndex) => {
+    setDebugSession((prev) => {
+      if (!prev) return prev;
+      const { currentIndex, steps } = prev;
+      let next = currentIndex;
+      if (type === "goto") next = targetIndex;
+      else if (type === "over" || type === "into") next = Math.min(currentIndex + 1, steps.length - 1);
+      return { ...prev, currentIndex: next };
+    });
+  };
+
+  const continueDebug = () => {
+    setDebugSession((prev) => {
+      if (!prev) return prev;
+      const { currentIndex, steps } = prev;
+      // jump to next breakpoint or end
+      const bpArr = [...breakpoints].sort((a, b) => a - b);
+      const nextBP = bpArr.find((bp) => {
+        const idx = steps.findIndex((s, i) => i > currentIndex && s.line === bp);
+        return idx !== -1;
+      });
+      let next = steps.length - 1;
+      if (nextBP !== undefined) {
+        const idx = steps.findIndex((s, i) => i > currentIndex && s.line === nextBP);
+        if (idx !== -1) next = idx;
+      }
+      return { ...prev, currentIndex: next };
+    });
+  };
+
+  const debugLine = isDebugging && debugSession?.steps?.[debugSession.currentIndex]?.line;
 
   const activeFile = files.find((f) => f.id === activeFileId);
 
@@ -176,9 +276,40 @@ export default function IDE() {
         <div className="flex flex-col flex-1 overflow-hidden">
           {activeTab === "Code" && (
             <>
-              <CodeEditor file={activeFile} onChange={updateFileContent} />
+              <CodeEditor
+                file={activeFile}
+                onChange={updateFileContent}
+                breakpoints={breakpoints}
+                onToggleBreakpoint={toggleBreakpoint}
+                debugLine={debugLine || null}
+              />
               <Terminal output={terminalOutput} onClear={clearTerminal} isRunning={isRunning} />
             </>
+          )}
+          {activeTab === "Debug" && (
+            <div className="flex flex-1 overflow-hidden">
+              <div className="flex flex-col flex-1 overflow-hidden">
+                <CodeEditor
+                  file={activeFile}
+                  onChange={updateFileContent}
+                  breakpoints={breakpoints}
+                  onToggleBreakpoint={toggleBreakpoint}
+                  debugLine={debugLine || null}
+                />
+              </div>
+              <div className="w-72 shrink-0 border-l border-[#1e2330] overflow-hidden flex flex-col">
+                <DebugPanel
+                  session={debugSession}
+                  onStart={startDebug}
+                  onStop={stopDebug}
+                  onStep={stepDebug}
+                  onContinue={continueDebug}
+                  isDebugging={isDebugging}
+                  breakpoints={breakpoints}
+                  activeFile={activeFile}
+                />
+              </div>
+            </div>
           )}
           {activeTab === "Infra" && <InfraPanel />}
           {activeTab === "Deploy" && <DeployPanel activeFile={activeFile} />}

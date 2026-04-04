@@ -32,7 +32,7 @@ function getWordAtCursor(text, cursorPos) {
   return match ? match[0] : "";
 }
 
-export default function CodeEditor({ file, onChange }) {
+export default function CodeEditor({ file, onChange, breakpoints = new Set(), onToggleBreakpoint, debugLine = null }) {
   const textareaRef = useRef(null);
   const highlightRef = useRef(null);
   const [autocomplete, setAutocomplete] = useState({ visible: false, items: [], index: 0, pos: { top: 0, left: 0 }, word: "" });
@@ -155,11 +155,30 @@ export default function CodeEditor({ file, onChange }) {
 
   return (
     <div className="flex-1 flex overflow-hidden bg-[#0d0f14] font-mono text-sm relative">
-      {/* Line numbers */}
-      <div className="select-none text-right text-gray-600 px-3 pt-4 leading-6 overflow-hidden min-w-[3rem] bg-[#0a0c11] border-r border-[#1e2330]">
-        {Array.from({ length: lines }, (_, i) => (
-          <div key={i + 1}>{i + 1}</div>
-        ))}
+      {/* Line numbers + breakpoint gutter */}
+      <div className="select-none text-right text-gray-600 pt-4 leading-6 overflow-hidden min-w-[3.5rem] bg-[#0a0c11] border-r border-[#1e2330] cursor-pointer">
+        {Array.from({ length: lines }, (_, i) => {
+          const lineNum = i + 1;
+          const isBP = breakpoints.has(lineNum);
+          const isActive = debugLine === lineNum;
+          return (
+            <div
+              key={lineNum}
+              onClick={() => onToggleBreakpoint?.(lineNum)}
+              className={`relative flex items-center justify-end pr-2 group transition-colors ${
+                isActive ? "bg-[#264f78]/40" : isBP ? "bg-red-500/10" : "hover:bg-[#1a1d26]"
+              }`}
+            >
+              {isBP && (
+                <span className="absolute left-1 w-2.5 h-2.5 rounded-full bg-red-500 shadow-lg shadow-red-500/50" style={{top: '50%', transform: 'translateY(-50%)'}} />
+              )}
+              {isActive && (
+                <span className="absolute left-1 text-yellow-400" style={{fontSize: 10, top: '50%', transform: 'translateY(-50%)'}}>▶</span>
+              )}
+              <span className={isActive ? "text-yellow-400" : isBP ? "text-red-400" : "text-gray-600"}>{lineNum}</span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Editor area */}
