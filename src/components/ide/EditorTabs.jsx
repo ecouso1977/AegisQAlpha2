@@ -137,6 +137,7 @@ export default function EditorTabs({
             <CodeEditor
               key={activeFileId}
               file={activeFile}
+              files={files}
               onChange={onChange}
               breakpoints={breakpoints}
               onToggleBreakpoint={onToggleBreakpoint}

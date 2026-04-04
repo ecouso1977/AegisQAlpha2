@@ -420,6 +420,7 @@ export default function IDE() {
               <div className="flex flex-col flex-1 overflow-hidden">
                 <CodeEditor
                   file={activeFile}
+                  files={files}
                   onChange={updateFileContent}
                   breakpoints={breakpoints}
                   onToggleBreakpoint={toggleBreakpoint}

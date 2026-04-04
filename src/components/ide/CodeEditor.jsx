@@ -1,8 +1,9 @@
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { EDITOR_THEMES, loadEditorPrefs } from "./SettingsModal";
 import { base44 } from "@/api/base44Client";
 import { Loader2 } from "lucide-react";
 import { SUGGESTIONS, KIND_COLORS, KIND_LABELS } from "./pythonSuggestions";
+import { buildProjectIndex, buildProjectContext } from "./projectIndexer";
 
 const PYTHON_KEYWORDS = [
   "def", "class", "import", "from", "return", "if", "elif", "else",
@@ -35,7 +36,7 @@ function buildHighlight(code, theme) {
     );
 }
 
-export default function CodeEditor({ file, onChange, breakpoints = new Set(), onToggleBreakpoint, debugLine = null, remoteCursors = [], onCursorMove, initialScrollTop = 0, onScroll, editorPrefs }) {
+export default function CodeEditor({ file, files = [], onChange, breakpoints = new Set(), onToggleBreakpoint, debugLine = null, remoteCursors = [], onCursorMove, initialScrollTop = 0, onScroll, editorPrefs }) {
   const resolvedPrefs = editorPrefs || loadEditorPrefs();
   const theme = EDITOR_THEMES.find((t) => t.id === resolvedPrefs.themeId) || EDITOR_THEMES[0];
   const fontSize = resolvedPrefs.fontSize || 13;
@@ -46,6 +47,9 @@ export default function CodeEditor({ file, onChange, breakpoints = new Set(), on
   const [aiLoading, setAiLoading] = useState(false);
   const aiDebounceRef = useRef(null);
   const lastCursorRef = useRef(0);
+
+  // Project-wide symbol index (memoized, updates when files change)
+  const projectSymbols = useMemo(() => buildProjectIndex(files), [files]);
 
   const syncScroll = () => {
     if (highlightRef.current && textareaRef.current) {
@@ -79,21 +83,23 @@ export default function CodeEditor({ file, onChange, breakpoints = new Set(), on
 
   const showSuggestions = useCallback((value, cursor) => {
     const word = getWordAtCursor(value, cursor);
-    if (word.length < 1) {
-      setAutocomplete((a) => ({ ...a, visible: false }));
-      return;
-    }
+    if (word.length < 1) { setAutocomplete((a) => ({ ...a, visible: false })); return; }
     const lower = word.toLowerCase();
-    const filtered = SUGGESTIONS.filter((s) =>
-      s.label.toLowerCase().startsWith(lower) && s.label.toLowerCase() !== lower
-    ).slice(0, 10);
-    if (filtered.length === 0) {
-      setAutocomplete((a) => ({ ...a, visible: false }));
-      return;
-    }
+
+    // Merge built-in suggestions + project symbols, project symbols first
+    const projectMatches = projectSymbols
+      .filter((s) => s.label.toLowerCase().startsWith(lower) && s.label.toLowerCase() !== lower)
+      .map((s) => ({ ...s, fromProject: true }));
+    const builtinMatches = SUGGESTIONS.filter(
+      (s) => s.label.toLowerCase().startsWith(lower) && s.label.toLowerCase() !== lower &&
+        !projectMatches.some((p) => p.label === s.label)
+    );
+    const merged = [...projectMatches, ...builtinMatches].slice(0, 12);
+
+    if (merged.length === 0) { setAutocomplete((a) => ({ ...a, visible: false })); return; }
     const pos = computeCaretCoords();
-    setAutocomplete({ visible: true, items: filtered, index: 0, pos, word });
-  }, [computeCaretCoords]);
+    setAutocomplete({ visible: true, items: merged, index: 0, pos, word });
+  }, [computeCaretCoords, projectSymbols]);
 
   const applyCompletion = useCallback((item) => {
     const ta = textareaRef.current;
@@ -168,24 +174,27 @@ export default function CodeEditor({ file, onChange, breakpoints = new Set(), on
     const lastLine = prefix.split("\n").pop();
     if (lastLine.trim().length < 3) return;
     setAiLoading(true);
+    const projectCtx = buildProjectContext(files, file?.id);
+    const ext = (file?.name || "").split(".").pop().toLowerCase();
+    const lang = ext === "py" ? "Python" : ["js","jsx"].includes(ext) ? "JavaScript" : "code";
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a Python code autocomplete engine (like GitHub Copilot). Given the code prefix below, suggest ONLY the next 1-3 lines of code that naturally complete it. Output ONLY the raw code continuation — no markdown, no explanation, no backticks, no extra text.
+        prompt: `You are an expert ${lang} code autocomplete engine (like GitHub Copilot). Suggest ONLY the next 1-3 lines that naturally complete the code. Output ONLY raw code — no markdown, no backticks, no explanation.${projectCtx ? `\n\n# Other project files (for context):\n${projectCtx}` : ""}
 
-Code so far:
-\`\`\`python
+# Active file: ${file?.name || ""}
+\`\`\`${lang.toLowerCase()}
 ${prefix}
 \`\`\`
 
 Continuation (raw code only):`,
       });
-      const suggestion = (result || "").replace(/^```[\w]*\n?|```$/g, "").trimEnd();
+      const suggestion = (result || "").replace(/^\`\`\`[\w]*\n?|\`\`\`$/g, "").trimEnd();
       if (suggestion && lastCursorRef.current === cursor) {
         setAiSuggestion(suggestion);
       }
     } catch {}
     setAiLoading(false);
-  }, []);
+  }, [files, file]);
 
   const handleChange = (e) => {
     const { value, selectionStart } = e.target;
@@ -343,6 +352,7 @@ Continuation (raw code only):`,
                 <div className="flex-1 min-w-0">
                   <span className="text-gray-100 text-xs font-mono">{item.label}</span>
                   <span className="text-gray-500 text-xs ml-2 truncate">{item.detail}</span>
+                  {item.source && <span className="text-[#00c896]/60 text-[10px] ml-1">· {item.source}</span>}
                 </div>
               </div>
             ))}
