@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { GitBranch, GitCommit, Download, Upload, Key, Loader2, Check, AlertCircle, FolderGit2, ArrowUp, ArrowDown } from "lucide-react";
+import GitDiffViewer from "./GitDiffViewer";
 
 const PROVIDERS = [
   { id: "github", name: "GitHub", icon: "🐙", tokenKey: "aq_gh_token", tokenHint: "ghp_...", docsUrl: "https://github.com/settings/tokens", scope: "repo scope", urlPattern: /github\.com[:/]([^/]+)\/([^/.]+)/ },
@@ -97,7 +98,7 @@ async function fetchCommits(provider, owner, repo, branch, token) {
   return [];
 }
 
-export default function GitPanel({ onClone, files, activeFile }) {
+export default function GitPanel({ onClone, files, activeFile, onApplyDiff }) {
   const [provider, setProvider] = useState("github");
   const [token, setToken] = useState(() => localStorage.getItem(PROVIDERS[0].tokenKey) || "");
   const [tokenInput, setTokenInput] = useState("");
@@ -246,10 +247,10 @@ export default function GitPanel({ onClone, files, activeFile }) {
 
       {/* Section tabs */}
       <div className="flex border-b border-[#1e2330] shrink-0">
-        {["repo", "branches", "commits", "push"].map((s) => (
+        {["repo", "branches", "commits", "push", "diff"].map((s) => (
           <button key={s} onClick={() => setSection(s)}
             className={`flex-1 py-1.5 capitalize transition-colors border-b-2 text-xs ${section === s ? "border-[#00c896] text-[#00c896]" : "border-transparent text-gray-600 hover:text-gray-300"}`}>
-            {s === "push" ? "↑Push" : s === "repo" ? "Clone" : s.slice(0, 6)}
+            {s === "push" ? "↑Push" : s === "repo" ? "Clone" : s === "diff" ? "⬡ Diff" : s.slice(0, 6)}
           </button>
         ))}
       </div>
@@ -326,6 +327,24 @@ export default function GitPanel({ onClone, files, activeFile }) {
           </div>
         )}
       </div>
+
+      {/* Diff viewer — full-width overlay when active */}
+      {section === "diff" && (
+        <div className="fixed inset-0 z-40 flex flex-col bg-[#0d0f14]" style={{ left: 0 }}>
+          <div className="flex items-center justify-between px-4 py-2 bg-[#0a0c11] border-b border-[#1e2330] shrink-0">
+            <span className="text-sm font-semibold text-[#00c896]">Git Diff Viewer</span>
+            <button onClick={() => setSection("repo")} className="text-gray-500 hover:text-gray-200 text-xs px-3 py-1 bg-[#1a1d26] border border-[#2a2d3a] rounded">← Back</button>
+          </div>
+          <GitDiffViewer
+            files={files}
+            activeFile={activeFile}
+            onApply={(fileId, newContent) => {
+              onApplyDiff?.(fileId, newContent);
+              setSection("repo");
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

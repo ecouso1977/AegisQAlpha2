@@ -332,6 +332,11 @@ export default function IDE() {
             onClone={handleClone}
             files={files}
             activeFile={activeFile}
+            onApplyDiff={(fileId, newContent) => {
+              setFiles((prev) => prev.map((f) => f.id === fileId ? { ...f, content: newContent } : f));
+              setActiveFileId(fileId);
+              setActiveTab("Code");
+            }}
           />
         )}
         {activityTab === "explorer" && (
