@@ -18,6 +18,7 @@ import GitPanel from "../components/ide/GitPanel";
 import MarketplacePanel from "../components/ide/MarketplacePanel";
 import LivePreviewPanel from "../components/ide/LivePreviewPanel";
 import CollabBar from "../components/ide/CollabBar";
+import RefactorPanel from "../components/ide/RefactorPanel";
 import TestingPanel from "../components/ide/TestingPanel";
 
 const DEFAULT_FILES = [
@@ -88,7 +89,7 @@ print("Sorted:", sorted(data))
   },
 ];
 
-const MAIN_TABS = ["Code", "Debug", "Live Preview", "Testing", "Infra", "Deploy", "Cloud", "API Vault", "Plugins", "Marketplace"];
+const MAIN_TABS = ["Code", "Debug", "Live Preview", "Testing", "Refactor", "Infra", "Deploy", "Cloud", "API Vault", "Plugins", "Marketplace"];
 
 const DEBUGGER_INJECTOR = `
 import sys as __sys__, json as __json__
@@ -393,6 +394,7 @@ export default function IDE() {
           {activeTab === "Marketplace" && <MarketplacePanel />}
           {activeTab === "Live Preview" && <LivePreviewPanel file={activeFile} />}
           {activeTab === "Testing" && <TestingPanel files={files} />}
+          {activeTab === "Refactor" && <RefactorPanel file={activeFile} />}
         </div>
 
         {/* AI Chat */}
