@@ -1,8 +1,10 @@
-import { Download, Monitor, Apple, Server, Package, CheckCircle } from "lucide-react";
+import { useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { Download, Apple, Server, Package, CheckCircle, Loader2 } from "lucide-react";
 
-const INSTALLERS = [
+const PLATFORM_CONFIGS = [
   {
-    id: "win",
+    id: "windows",
     label: "Windows",
     icon: Monitor,
     size: "142 MB",
@@ -31,8 +33,29 @@ const INSTALLERS = [
 ];
 
 export default function BuildInstallerPanel() {
-  const handleDownload = (installer) => {
-    window.open(installer.downloadUrl, "_blank");
+  const [buildingPlatforms, setBuildingPlatforms] = useState(new Set());
+  const [builds, setBuilds] = useState({});
+
+  const handleBuild = async (platform) => {
+    setBuildingPlatforms((prev) => new Set(prev).add(platform.id));
+    try {
+      const response = await base44.functions.invoke('buildInstallers', { platform: platform.id });
+      setBuilds((prev) => ({ ...prev, [platform.id]: response.data }));
+    } catch (error) {
+      console.error('Build failed:', error);
+    } finally {
+      setBuildingPlatforms((prev) => {
+        const next = new Set(prev);
+        next.delete(platform.id);
+        return next;
+      });
+    }
+  };
+
+  const handleDownload = (build) => {
+    if (build.fileUrl) {
+      window.open(build.fileUrl, "_blank");
+    }
   };
 
   return (
@@ -64,36 +87,66 @@ export default function BuildInstallerPanel() {
 
         {/* Download cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {INSTALLERS.map((installer) => {
-            const Icon = installer.icon;
+          {PLATFORM_CONFIGS.map((platform) => {
+            const Icon = platform.icon;
+            const build = builds[platform.id];
+            const isBuilding = buildingPlatforms.has(platform.id);
+
             return (
               <div
-                key={installer.id}
+                key={platform.id}
                 className="bg-[#0e1018] border border-[#1e2330] rounded-xl p-6 flex flex-col gap-4 hover:border-[#00c896]/50 transition-colors"
               >
                 <div className="flex items-start justify-between">
                   <Icon className="w-8 h-8 text-[#00c896]" />
-                  <span className="text-xs bg-[#00c896]/10 text-[#00c896] border border-[#00c896]/20 px-2 py-1 rounded">
-                    {installer.size}
-                  </span>
+                  {build ? (
+                    <span className="text-xs bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-1 rounded flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" />
+                      Built
+                    </span>
+                  ) : (
+                    <span className="text-xs bg-[#00c896]/10 text-[#00c896] border border-[#00c896]/20 px-2 py-1 rounded">
+                      Not built
+                    </span>
+                  )}
                 </div>
 
                 <div>
                   <h3 className="text-lg font-semibold text-white">
-                    {installer.label}
+                    {platform.label}
                   </h3>
                   <p className="text-xs text-gray-500 mt-1">
-                    {installer.ext} • v{installer.version}
+                    {platform.ext} • v1.0.0
                   </p>
                 </div>
 
-                <button
-                  onClick={() => handleDownload(installer)}
-                  className="flex items-center justify-center gap-2 py-3 bg-[#00c896] hover:bg-[#00b084] text-black font-bold rounded-lg transition-colors text-sm"
-                >
-                  <Download className="w-4 h-4" />
-                  Download
-                </button>
+                {build ? (
+                  <button
+                    onClick={() => handleDownload(build)}
+                    className="flex items-center justify-center gap-2 py-3 bg-[#00c896] hover:bg-[#00b084] text-black font-bold rounded-lg transition-colors text-sm"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download ({(build.size / 1024 / 1024).toFixed(0)} MB)
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleBuild(platform)}
+                    disabled={isBuilding}
+                    className="flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors text-sm"
+                  >
+                    {isBuilding ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Building...
+                      </>
+                    ) : (
+                      <>
+                        <Package className="w-4 h-4" />
+                        Build Installer
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             );
           })}
