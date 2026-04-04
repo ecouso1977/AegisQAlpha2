@@ -1,7 +1,8 @@
-import { Play, MessageSquare, Loader2, X, Sun, Moon } from "lucide-react";
+import { Play, MessageSquare, Loader2, X, Sun, Moon, Store } from "lucide-react";
 import { useState } from "react";
+import NavMenu from "./NavMenu";
 
-export default function IDEHeader({ activeFile, isRunning, onRun, chatOpen, onToggleChat, activeTab, setActiveTab, tabs }) {
+export default function IDEHeader({ activeFile, isRunning, onRun, chatOpen, onToggleChat, activeTab, setActiveTab, tabs, onNavAction }) {
   const [dark, setDark] = useState(true);
 
   return (
@@ -14,13 +15,7 @@ export default function IDEHeader({ activeFile, isRunning, onRun, chatOpen, onTo
             alt="Aegis Quantum"
             className="h-8 object-contain"
           />
-          <div className="hidden md:flex items-center gap-1 text-xs text-gray-500">
-            <span className="hover:text-gray-300 cursor-pointer px-2 py-1 rounded hover:bg-[#1a1d26]">File</span>
-            <span className="hover:text-gray-300 cursor-pointer px-2 py-1 rounded hover:bg-[#1a1d26]">Edit</span>
-            <span className="hover:text-gray-300 cursor-pointer px-2 py-1 rounded hover:bg-[#1a1d26]">View</span>
-            <span className="hover:text-gray-300 cursor-pointer px-2 py-1 rounded hover:bg-[#1a1d26]">Terminal</span>
-            <span className="hover:text-gray-300 cursor-pointer px-2 py-1 rounded hover:bg-[#1a1d26]">Help</span>
-          </div>
+          <NavMenu onAction={onNavAction} />
         </div>
 
         {/* Center: active file pill */}
@@ -69,12 +64,13 @@ export default function IDEHeader({ activeFile, isRunning, onRun, chatOpen, onTo
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${
+            className={`flex items-center gap-1.5 px-4 py-2 text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${
               activeTab === tab
                 ? "border-[#00c896] text-[#00c896]"
                 : "border-transparent text-gray-500 hover:text-gray-300"
             }`}
           >
+            {tab === "Marketplace" && <Store className="w-3 h-3" />}
             {tab}
           </button>
         ))}

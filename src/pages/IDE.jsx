@@ -13,6 +13,7 @@ import APIVault from "../components/ide/APIVault";
 import PluginsPanel from "../components/ide/PluginsPanel";
 import DebugPanel from "../components/ide/DebugPanel";
 import GitPanel from "../components/ide/GitPanel";
+import MarketplacePanel from "../components/ide/MarketplacePanel";
 
 const DEFAULT_FILES = [
   {
@@ -82,7 +83,7 @@ print("Sorted:", sorted(data))
   },
 ];
 
-const MAIN_TABS = ["Code", "Debug", "Infra", "Deploy", "Cloud", "API Vault", "Plugins"];
+const MAIN_TABS = ["Code", "Debug", "Infra", "Deploy", "Cloud", "API Vault", "Plugins", "Marketplace"];
 
 const DEBUGGER_INJECTOR = `
 import sys as __sys__, json as __json__
@@ -196,6 +197,18 @@ export default function IDE() {
 
   const debugLine = isDebugging && debugSession?.steps?.[debugSession.currentIndex]?.line;
 
+  const handleNavAction = (action) => {
+    if (action === "run") runCode();
+    else if (action === "clear-terminal") clearTerminal();
+    else if (action === "toggle-chat") setChatOpen((v) => !v);
+    else if (action === "view-explorer") setActivityTab("explorer");
+    else if (action === "view-git") setActivityTab("git");
+    else if (action === "view-debug") setActiveTab("Debug");
+    else if (action === "new-file") addFile(`untitled_${Date.now()}.py`);
+    else if (action === "docs") window.open("https://aegisquantum.dev/docs", "_blank");
+    else if (action === "report") window.open("https://github.com/aegis-quantum/issues", "_blank");
+  };
+
   const handleClone = (clonedFiles, label) => {
     setFiles(clonedFiles);
     setActiveFileId(clonedFiles[0]?.id || null);
@@ -262,6 +275,7 @@ export default function IDE() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         tabs={MAIN_TABS}
+        onNavAction={handleNavAction}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -330,6 +344,7 @@ export default function IDE() {
           {activeTab === "Cloud" && <CloudPanel />}
           {activeTab === "API Vault" && <APIVault />}
           {activeTab === "Plugins" && <PluginsPanel />}
+          {activeTab === "Marketplace" && <MarketplacePanel />}
         </div>
 
         {/* AI Chat */}
