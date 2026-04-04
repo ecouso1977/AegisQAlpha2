@@ -44,7 +44,10 @@ export default function IDEHeader({ activeFile, isRunning, onRun, chatOpen, onTo
       <div className="flex items-center justify-between px-4 py-2 border-b border-[#1e2330]">
         <div className="flex items-center gap-3">
           <img
-            src="https://media.base44.com/images/public/user_699110fc01cd81dc0b5212a8/a08cd04ad_dark-logo.png"
+            src={dark
+              ? "https://media.base44.com/images/public/user_699110fc01cd81dc0b5212a8/a08cd04ad_dark-logo.png"
+              : "https://media.base44.com/images/public/69d0b26066dc23493b4330f7/2e593a76e_light-logo.png"
+            }
             alt="Aegis Quantum"
             className="h-8 object-contain"
           />
