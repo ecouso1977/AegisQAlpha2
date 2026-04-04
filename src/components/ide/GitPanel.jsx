@@ -202,6 +202,19 @@ export default function GitPanel({ onClone, files, activeFile, onApplyDiff }) {
     setLoading("");
   };
 
+  const pullBranch = async () => {
+    if (!repoInfo) return;
+    setLoading("pull"); setError("");
+    try {
+      const loaded = await fetchFiles(provider, repoInfo.owner, repoInfo.repo, currentBranch, tok);
+      onClone(loaded, `${repoInfo.repo} (${currentBranch})`);
+      const cms = await fetchCommits(provider, repoInfo.owner, repoInfo.repo, currentBranch, tok);
+      setCommits(cms);
+      setSuccess(`Pulled latest from ${currentBranch} (${loaded.length} files)`);
+    } catch (e) { setError(e.message); }
+    setLoading("");
+  };
+
   return (
     <div className="w-64 shrink-0 bg-[#0e1018] border-r border-[#1e2330] flex flex-col overflow-hidden text-xs">
       {/* Header */}
@@ -247,10 +260,10 @@ export default function GitPanel({ onClone, files, activeFile, onApplyDiff }) {
 
       {/* Section tabs */}
       <div className="flex border-b border-[#1e2330] shrink-0">
-        {["repo", "branches", "commits", "push", "diff"].map((s) => (
+        {["repo", "branches", "commits", "push", "pull", "diff"].map((s) => (
           <button key={s} onClick={() => setSection(s)}
             className={`flex-1 py-1.5 capitalize transition-colors border-b-2 text-xs ${section === s ? "border-[#00c896] text-[#00c896]" : "border-transparent text-gray-600 hover:text-gray-300"}`}>
-            {s === "push" ? "↑Push" : s === "repo" ? "Clone" : s === "diff" ? "⬡ Diff" : s.slice(0, 6)}
+            {s === "push" ? "↑Push" : s === "pull" ? "↓Pull" : s === "repo" ? "Clone" : s === "diff" ? "⬡ Diff" : s.slice(0, 6)}
           </button>
         ))}
       </div>
@@ -322,6 +335,41 @@ export default function GitPanel({ onClone, files, activeFile, onApplyDiff }) {
                   {loading === "push" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowUp className="w-3.5 h-3.5" />}
                   {loading === "push" ? "Pushing..." : "Commit & Push"}
                 </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {section === "pull" && (
+          <div className="p-3 space-y-3">
+            {!repoInfo && <div className="text-gray-600 text-center py-8">Clone a repo first</div>}
+            {repoInfo && (
+              <>
+                <div className="text-gray-500">Pull latest files from <span className="text-[#00c896]">{currentBranch}</span> into the workspace.</div>
+                <div className="bg-[#1a1d26] rounded px-2 py-1.5 border border-[#2a2d3a] space-y-1">
+                  <div className="text-gray-500">Repository</div>
+                  <div className="text-[#00c896] font-medium">{repoInfo.fullName}</div>
+                  <div className="flex items-center gap-1.5"><GitBranch className="w-3 h-3 text-gray-500" /><span className="text-gray-300">{currentBranch}</span></div>
+                </div>
+                <button onClick={pullBranch} disabled={loading === "pull"}
+                  className="w-full flex items-center justify-center gap-2 py-1.5 bg-[#00c896] hover:bg-[#00b084] disabled:opacity-40 text-black font-semibold rounded transition-colors">
+                  {loading === "pull" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowDown className="w-3.5 h-3.5" />}
+                  {loading === "pull" ? "Pulling..." : "Pull Latest"}
+                </button>
+                {commits.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="text-gray-600 uppercase tracking-wider text-[10px] font-semibold">Recent commits</div>
+                    {commits.slice(0, 5).map((c, i) => (
+                      <div key={i} className="flex items-start gap-2 px-2 py-1.5 rounded bg-[#0a0c11] border border-[#1e2330]">
+                        <GitCommit className="w-3 h-3 text-gray-500 shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <div className="text-gray-300 truncate leading-tight">{c.message}</div>
+                          <div className="text-gray-600 flex gap-2 mt-0.5"><span className="text-[#00c896] font-mono">{c.sha}</span><span>{c.date}</span></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </div>
