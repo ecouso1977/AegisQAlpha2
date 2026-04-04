@@ -2,8 +2,10 @@ import { useState, useRef, useEffect } from "react";
 import {
   FilePlus, FolderPlus, Trash2, FileCode, Folder, FolderOpen,
   ChevronRight, ChevronDown, Pencil, Check, X, Search, FileText,
-  File, FolderGit2
+  File, FolderGit2, Lock
 } from "lucide-react";
+import { useState, useEffect } from "react";
+import PasswordProtectionModal from "./PasswordProtectionModal";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -101,7 +103,7 @@ function ContextMenu({ x, y, items, onClose }) {
 
 // ── FileNode ──────────────────────────────────────────────────────────────────
 
-function FileNode({ file, depth, activeFileId, onSelect, onDelete, onRename, renamingId, setRenamingId }) {
+function FileNode({ file, depth, activeFileId, onSelect, onDelete, onRename, renamingId, setRenamingId, onProtect, isProtected }) {
   const isActive = activeFileId === file.id;
   const isRenaming = renamingId === file.id;
   const displayName = file.displayName || file.name;
@@ -140,6 +142,9 @@ function FileNode({ file, depth, activeFileId, onSelect, onDelete, onRename, ren
           <button onClick={(e) => { e.stopPropagation(); onDelete(file.id); }} className="text-gray-500 hover:text-red-400 p-0.5" title="Delete">
             <Trash2 className="w-2.5 h-2.5" />
           </button>
+          <button onClick={(e) => { e.stopPropagation(); onProtect('file', file.name, file.id); }} className={`p-0.5 ${isProtected ? 'text-[#00c896]' : 'text-gray-500 hover:text-[#00c896]'}`} title="Password protect">
+            <Lock className="w-2.5 h-2.5" />
+          </button>
         </div>
       </div>
       {ctxMenu && (
@@ -149,6 +154,7 @@ function FileNode({ file, depth, activeFileId, onSelect, onDelete, onRename, ren
           items={[
             { label: "Open", icon: FileCode, action: () => onSelect(file.id) },
             { label: "Rename", icon: Pencil, action: () => setRenamingId(file.id) },
+            { label: isProtected ? "Password Protected" : "Protect with Password", icon: Lock, action: () => onProtect('file', file.name, file.id) },
             "divider",
             { label: "Delete", icon: Trash2, danger: true, action: () => onDelete(file.id) },
           ]}
@@ -253,11 +259,15 @@ function FolderNode({ name, node, depth, activeFileId, onSelect, onDelete, onRen
                 onRename={onRename} onAddFile={onAddFile} onAddFolder={onAddFolder}
                 renamingId={renamingId} setRenamingId={setRenamingId} />
             ))}
-            {node.files.map((file) => (
-              <FileNode key={file.id} file={file} depth={depth + 1}
-                activeFileId={activeFileId} onSelect={onSelect} onDelete={onDelete}
-                onRename={onRename} renamingId={renamingId} setRenamingId={setRenamingId} />
-            ))}
+            {node.files.map((file) => {
+              const isProtected = protectedItems.has(`file:${file.name}`);
+              return (
+                <FileNode key={file.id} file={file} depth={depth + 1}
+                  activeFileId={activeFileId} onSelect={onSelect} onDelete={onDelete}
+                  onRename={onRename} renamingId={renamingId} setRenamingId={setRenamingId}
+                  onProtect={handleProtectItem} isProtected={isProtected} />
+              );
+            })}
           </div>
         )}
       </div>
@@ -286,6 +296,19 @@ export default function FileExplorer({ files, activeFileId, onSelect, onAdd, onD
   const [addingFolder, setAddingFolder] = useState(false);
   const [renamingId, setRenamingId] = useState(null);
   const [search, setSearch] = useState("");
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [passwordTarget, setPasswordTarget] = useState(null);
+  const [protectedItems, setProtectedItems] = useState(new Map());
+
+  const handleProtectItem = (type, name, itemId) => {
+    setPasswordTarget({ type, name, itemId });
+    setPasswordModalOpen(true);
+  };
+
+  const handlePasswordSet = ({ type, name, hash }) => {
+    const key = `${type}:${name}`;
+    setProtectedItems(new Map(protectedItems).set(key, { hash, protectedAt: new Date().toISOString() }));
+  };
 
   const handleAddFile = (name) => {
     if (!name) return setAddingFile(false);
@@ -325,7 +348,14 @@ export default function FileExplorer({ files, activeFileId, onSelect, onAdd, onD
   const tree = buildTree(files);
 
   return (
-    <div className="w-60 shrink-0 bg-[#0e1018] border-r border-[#1e2330] flex flex-col overflow-hidden select-none">
+    <div className="w-60 shrink-0 bg-[#0e1018] border-r border-[#1e2330] flex flex-col overflow-hidden select-none relative">
+      <PasswordProtectionModal
+        isOpen={passwordModalOpen}
+        onClose={() => setPasswordModalOpen(false)}
+        targetType={passwordTarget?.type || 'file'}
+        targetName={passwordTarget?.name || ''}
+        onProtect={handlePasswordSet}
+      />
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-[#1e2330] shrink-0">
         <div className="flex items-center gap-1.5">
@@ -391,11 +421,15 @@ export default function FileExplorer({ files, activeFileId, onSelect, onAdd, onD
                 onAddFile={onAdd} onAddFolder={onAdd}
                 renamingId={renamingId} setRenamingId={setRenamingId} />
             ))}
-            {tree.files.map((file) => (
-              <FileNode key={file.id} file={file} depth={0}
-                activeFileId={activeFileId} onSelect={onSelect} onDelete={onDelete}
-                onRename={onRename} renamingId={renamingId} setRenamingId={setRenamingId} />
-            ))}
+            {tree.files.map((file) => {
+              const isProtected = protectedItems.has(`file:${file.name}`);
+              return (
+                <FileNode key={file.id} file={file} depth={0}
+                  activeFileId={activeFileId} onSelect={onSelect} onDelete={onDelete}
+                  onRename={onRename} renamingId={renamingId} setRenamingId={setRenamingId}
+                  onProtect={handleProtectItem} isProtected={isProtected} />
+              );
+            })}
           </>
         )}
 
