@@ -370,6 +370,10 @@ export default function IDE() {
               isRunning={isRunning}
               collabSession={collab}
               onRun={runCode}
+              onPipeToEditor={(text) => {
+                const updated = (activeFile?.content || "") + "\n# Terminal output:\n" + text.split("\n").map(l => "# " + l).join("\n");
+                updateFileContent(updated);
+              }}
             />
           )}
           {activeTab === "Debug" && (

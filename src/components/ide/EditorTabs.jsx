@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Code2, Eye, LayoutDashboard, X, FileCode, Wand2 } from "lucide-react";
 import IntelligentRefactorModal from "./IntelligentRefactorModal";
 import CodeEditor from "./CodeEditor";
-import Terminal from "./Terminal";
+import AdvancedTerminal from "./AdvancedTerminal";
 import LivePreviewPanel from "./LivePreviewPanel";
 import WorkspaceDashboard from "./WorkspaceDashboard";
 
@@ -22,7 +22,7 @@ export default function EditorTabs({
   activeFile, activeFileId, files, onSelectFile,
   onChange, breakpoints, onToggleBreakpoint, debugLine,
   remoteCursors, onCursorMove, terminalOutput, onClear, isRunning,
-  collabSession, onRun,
+  collabSession, onRun, onPipeToEditor,
 }) {
   const [viewTab, setViewTab] = useState("code");
   const [openIds, setOpenIds] = useState(() => activeFileId ? [activeFileId] : []);
@@ -131,7 +131,13 @@ export default function EditorTabs({
             initialScrollTop={scrollPositions.current[activeFileId] || 0}
             onScroll={(top) => handleEditorScroll(activeFileId, top)}
           />
-          <Terminal output={terminalOutput} onClear={onClear} isRunning={isRunning} />
+          <AdvancedTerminal
+            output={terminalOutput}
+            onClear={onClear}
+            isRunning={isRunning}
+            activeFile={activeFile}
+            onPipeToEditor={onPipeToEditor}
+          />
         </>
       )}
       {viewTab === "preview" && <LivePreviewPanel file={activeFile} />}
