@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Download, Apple, Server, Package, CheckCircle, Loader2 } from "lucide-react";
+import { Download, Apple, Server, Package, CheckCircle, Loader2, Monitor } from "lucide-react";
+import CodeEditorPreview from "./CodeEditorPreview";
 
 const PLATFORM_CONFIGS = [
   {
@@ -32,9 +33,17 @@ const PLATFORM_CONFIGS = [
   },
 ];
 
-export default function BuildInstallerPanel() {
+export default function BuildInstallerPanel({ files = [], onFileChange }) {
   const [buildingPlatforms, setBuildingPlatforms] = useState(new Set());
   const [builds, setBuilds] = useState({});
+  const [projectFiles, setProjectFiles] = useState(files);
+
+  const handleFileChange = (fileId, content) => {
+    setProjectFiles((prev) =>
+      prev.map((f) => (f.id === fileId ? { ...f, content } : f))
+    );
+    if (onFileChange) onFileChange(fileId, content);
+  };
 
   const handleBuild = async (platform) => {
     setBuildingPlatforms((prev) => new Set(prev).add(platform.id));
@@ -151,6 +160,13 @@ export default function BuildInstallerPanel() {
             );
           })}
         </div>
+
+        {/* Code Editor Preview */}
+        <CodeEditorPreview
+          files={projectFiles}
+          activeFileId={projectFiles[0]?.id}
+          onFileChange={handleFileChange}
+        />
 
         {/* System requirements */}
         <div className="bg-[#0e1018] border border-[#1e2330] rounded-xl p-4 space-y-3">

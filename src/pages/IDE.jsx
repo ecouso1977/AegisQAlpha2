@@ -453,7 +453,7 @@ export default function IDE() {
           {activeTab === "Plugins" && <PluginsPanel />}
           {activeTab === "Marketplace" && <MarketplacePanel />}
           {activeTab === "Integrations" && <IntegrationsPanel />}
-          {activeTab === "Build Installer" && <BuildInstallerPanel />}
+          {activeTab === "Build Installer" && <BuildInstallerPanel files={files} onFileChange={updateFileContent} />}
           {activeTab === "Build Monitor" && <BuildMonitoringDashboard />}
           {activeTab === "Community Plugins" && <CommunityPluginsBrowser selectedPlugins={[...enabledPlugins]} onTogglePlugin={(pluginId) => {
             setEnabledPlugins((prev) => prev.includes(pluginId) ? prev.filter((p) => p !== pluginId) : [...prev, pluginId]);
