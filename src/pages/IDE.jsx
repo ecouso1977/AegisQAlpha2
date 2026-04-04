@@ -345,7 +345,7 @@ export default function IDE() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Activity Bar */}
-        <ActivityBar active={activityTab} onChange={setActivityTab} />
+        <ActivityBar active={activityTab} onChange={setActivityTab} onOpenSettings={() => setSettingsOpen(true)} />
 
         {/* Left Panel (Explorer / Search / etc) */}
         {activityTab === "git" && (
