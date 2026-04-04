@@ -1,9 +1,9 @@
-import { Play, MessageSquare, Loader2, X, Sun, Moon, Store, Download } from "lucide-react";
+import { Play, MessageSquare, Loader2, X, Sun, Moon, Store, Download, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 import JSZip from "jszip";
 import NavMenu from "./NavMenu";
 
-export default function IDEHeader({ activeFile, isRunning, onRun, chatOpen, onToggleChat, activeTab, setActiveTab, tabs, onNavAction, files }) {
+export default function IDEHeader({ activeFile, isRunning, onRun, chatOpen, onToggleChat, activeTab, setActiveTab, tabs, onNavAction, files, onOpenSettings }) {
   const [dark, setDark] = useState(true);
 
   useEffect(() => {
@@ -77,6 +77,14 @@ export default function IDEHeader({ activeFile, isRunning, onRun, chatOpen, onTo
           >
             {isRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
             {isRunning ? "Running..." : "Run"}
+          </button>
+
+          <button
+            onClick={onOpenSettings}
+            title="Editor Settings"
+            className="p-1.5 text-gray-400 hover:text-[#00c896] bg-[#1a1d26] border border-[#2a2d3a] rounded transition-colors"
+          >
+            <Settings className="w-4 h-4" />
           </button>
 
           <button

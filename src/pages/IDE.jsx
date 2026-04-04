@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useCollabSession } from "../hooks/useCollabSession";
 import FileExplorer from "../components/ide/FileExplorer";
@@ -23,6 +23,8 @@ import RefactorPanel from "../components/ide/RefactorPanel";
 import BuildInstallerPanel from "../components/ide/BuildInstallerPanel";
 import EditorTabs from "../components/ide/EditorTabs";
 import TestingPanel from "../components/ide/TestingPanel";
+import SettingsModal from "../components/ide/SettingsModal";
+import { loadEditorPrefs } from "../components/ide/SettingsModal";
 
 const DEFAULT_FILES = [
   {
@@ -125,6 +127,14 @@ export default function IDE() {
   const [chatOpen, setChatOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Code");
   const [activityTab, setActivityTab] = useState("explorer");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [editorPrefs, setEditorPrefs] = useState(loadEditorPrefs);
+
+  useEffect(() => {
+    const handler = (e) => setEditorPrefs(e.detail);
+    window.addEventListener("aq-prefs-change", handler);
+    return () => window.removeEventListener("aq-prefs-change", handler);
+  }, []);
   const [breakpoints, setBreakpoints] = useState(new Set());
   const [debugSession, setDebugSession] = useState(null);
   const [isDebugging, setIsDebugging] = useState(false);
@@ -309,6 +319,7 @@ export default function IDE() {
         isConnected={collab.isConnected}
         currentUser={currentUser}
       />
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       <IDEHeader
         activeFile={activeFile}
         isRunning={isRunning}
@@ -320,6 +331,7 @@ export default function IDE() {
         tabs={MAIN_TABS}
         onNavAction={handleNavAction}
         files={files}
+        onOpenSettings={() => setSettingsOpen(true)}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -380,6 +392,7 @@ export default function IDE() {
               onDebugStop={stopDebug}
               onDebugStep={stepDebug}
               onDebugContinue={continueDebug}
+              editorPrefs={editorPrefs}
             />
           )}
           {activeTab === "Debug" && (
@@ -393,6 +406,7 @@ export default function IDE() {
                   debugLine={debugLine || null}
                   remoteCursors={collab.remoteCursors}
                   onCursorMove={collab.isConnected ? collab.pushCursor : null}
+                  editorPrefs={editorPrefs}
                 />
               </div>
               <div className="w-72 shrink-0 border-l border-[#1e2330] overflow-hidden flex flex-col">

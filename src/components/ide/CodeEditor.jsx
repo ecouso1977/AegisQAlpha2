@@ -1,4 +1,5 @@
-import { useRef, useState, useEffect, useCallback, useRef as useDebounceRef } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
+import { EDITOR_THEMES, loadEditorPrefs } from "./SettingsModal";
 import { base44 } from "@/api/base44Client";
 import { Loader2 } from "lucide-react";
 import { SUGGESTIONS, KIND_COLORS, KIND_LABELS } from "./pythonSuggestions";
@@ -12,21 +13,7 @@ const PYTHON_KEYWORDS = [
   "nonlocal", "raise", "self", "__name__", "__main__",
 ];
 
-function highlight(code) {
-  if (!code) return "";
-  const escaped = code
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-  return escaped
-    .replace(/("""[\s\S]*?"""|'''[\s\S]*?'''|"[^"]*"|'[^']*')/g, '<span style="color:#ce9178">$1</span>')
-    .replace(/(#[^\n]*)/g, '<span style="color:#6a9955">$1</span>')
-    .replace(/\b(\d+\.?\d*)\b/g, '<span style="color:#b5cea8">$1</span>')
-    .replace(new RegExp(`\\b(${PYTHON_KEYWORDS.join("|")})\\b`, "g"), '<span style="color:#569cd6">$1</span>')
-    .replace(/\b(def|class)\s+(\w+)/g, (m, kw, name) =>
-      `<span style="color:#569cd6">${kw}</span> <span style="color:#dcdcaa">${name}</span>`
-    );
-}
+
 
 function getWordAtCursor(text, cursorPos) {
   const before = text.slice(0, cursorPos);
@@ -34,7 +21,24 @@ function getWordAtCursor(text, cursorPos) {
   return match ? match[0] : "";
 }
 
-export default function CodeEditor({ file, onChange, breakpoints = new Set(), onToggleBreakpoint, debugLine = null, remoteCursors = [], onCursorMove, initialScrollTop = 0, onScroll }) {
+function buildHighlight(code, theme) {
+  if (!code) return "";
+  const t = theme || EDITOR_THEMES[0];
+  const escaped = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return escaped
+    .replace(/("""[\s\S]*?"""|'''[\s\S]*?'''|"[^"]*"|'[^']*')/g, `<span style="color:${t.string}">$1</span>`)
+    .replace(/(#[^\n]*)/g, `<span style="color:${t.comment}">$1</span>`)
+    .replace(/\b(\d+\.?\d*)\b/g, `<span style="color:${t.number}">$1</span>`)
+    .replace(new RegExp(`\\b(${PYTHON_KEYWORDS.join("|")})\\b`, "g"), `<span style="color:${t.keyword}">$1</span>`)
+    .replace(/\b(def|class)\s+(\w+)/g, (m, kw, name) =>
+      `<span style="color:${t.keyword}">${kw}</span> <span style="color:#dcdcaa">${name}</span>`
+    );
+}
+
+export default function CodeEditor({ file, onChange, breakpoints = new Set(), onToggleBreakpoint, debugLine = null, remoteCursors = [], onCursorMove, initialScrollTop = 0, onScroll, editorPrefs }) {
+  const resolvedPrefs = editorPrefs || loadEditorPrefs();
+  const theme = EDITOR_THEMES.find((t) => t.id === resolvedPrefs.themeId) || EDITOR_THEMES[0];
+  const fontSize = resolvedPrefs.fontSize || 13;
   const textareaRef = useRef(null);
   const highlightRef = useRef(null);
   const [autocomplete, setAutocomplete] = useState({ visible: false, items: [], index: 0, pos: { top: 0, left: 0 }, word: "" });
@@ -207,10 +211,11 @@ Continuation (raw code only):`,
   };
 
   const lines = (file?.content || "").split("\n").length;
+  const lineH = Math.round(fontSize * 1.85); // dynamic line height
 
   if (!file) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#0d0f14] text-gray-500">
+      <div className="flex-1 flex items-center justify-center text-gray-500" style={{ background: theme.bg }}>
         <div className="text-center">
           <p className="text-lg mb-2">No file selected</p>
           <p className="text-sm">Create or select a file to start coding</p>
@@ -220,9 +225,9 @@ Continuation (raw code only):`,
   }
 
   return (
-    <div className="flex-1 flex overflow-hidden bg-[#0d0f14] font-mono text-sm relative">
+    <div className="flex-1 flex overflow-hidden font-mono relative" style={{ background: theme.bg, fontSize, color: theme.text }}>
       {/* Line numbers + breakpoint gutter */}
-      <div className="select-none text-right text-gray-600 pt-4 leading-6 overflow-hidden min-w-[3.5rem] bg-[#0a0c11] border-r border-[#1e2330] cursor-pointer">
+      <div className="select-none text-right overflow-hidden min-w-[3.5rem] border-r cursor-pointer" style={{ background: theme.surface, borderColor: theme.surface, paddingTop: 16 }}>
         {Array.from({ length: lines }, (_, i) => {
           const lineNum = i + 1;
           const isBP = breakpoints.has(lineNum);
@@ -231,9 +236,8 @@ Continuation (raw code only):`,
             <div
               key={lineNum}
               onClick={() => onToggleBreakpoint?.(lineNum)}
-              className={`relative flex items-center justify-end pr-2 group transition-colors ${
-                isActive ? "bg-[#264f78]/40" : isBP ? "bg-red-500/10" : "hover:bg-[#1a1d26]"
-              }`}
+              className={`relative flex items-center justify-end pr-2 group transition-colors ${isActive ? "" : isBP ? "" : ""}`}
+              style={{ height: lineH, background: isActive ? "#264f78" : isBP ? "rgba(239,68,68,0.1)" : undefined }}
             >
               {isBP && (
                 <span className="absolute left-1 w-2.5 h-2.5 rounded-full bg-red-500 shadow-lg shadow-red-500/50" style={{top: '50%', transform: 'translateY(-50%)'}} />
@@ -280,9 +284,9 @@ Continuation (raw code only):`,
         <pre
           ref={highlightRef}
           aria-hidden="true"
-          className="absolute inset-0 p-4 leading-6 text-gray-100 overflow-auto pointer-events-none whitespace-pre"
-          style={{ fontFamily: "'Fira Code', 'Cascadia Code', monospace" }}
-          dangerouslySetInnerHTML={{ __html: highlight(file.content) + "\n" }}
+          className="absolute inset-0 p-4 overflow-auto pointer-events-none whitespace-pre"
+          style={{ fontFamily: "'Fira Code', 'Cascadia Code', monospace", lineHeight: `${lineH}px`, fontSize, color: theme.text, background: theme.bg }}
+          dangerouslySetInnerHTML={{ __html: buildHighlight(file.content, theme) + "\n" }}
         />
         {/* Textarea */}
         {remoteCursors.map((cursor, i) => {
@@ -312,8 +316,8 @@ Continuation (raw code only):`,
           onClick={handleClick}
           onBlur={() => setTimeout(() => setAutocomplete((a) => ({ ...a, visible: false })), 150)}
           spellCheck={false}
-          className="absolute inset-0 w-full h-full p-4 leading-6 bg-transparent text-transparent caret-white resize-none outline-none overflow-auto"
-          style={{ fontFamily: "'Fira Code', 'Cascadia Code', monospace", caretColor: "#00c896" }}
+          className="absolute inset-0 w-full h-full p-4 bg-transparent text-transparent resize-none outline-none overflow-auto"
+          style={{ fontFamily: "'Fira Code', 'Cascadia Code', monospace", caretColor: "#00c896", lineHeight: `${lineH}px`, fontSize }}
         />
 
         {/* Autocomplete dropdown */}

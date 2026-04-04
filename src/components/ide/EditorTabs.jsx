@@ -25,6 +25,7 @@ export default function EditorTabs({
   remoteCursors, onCursorMove, terminalOutput, onClear, isRunning,
   collabSession, onRun, onPipeToEditor,
   debugSession, isDebugging, onDebugStart, onDebugStop, onDebugStep, onDebugContinue,
+  editorPrefs,
 }) {
   const [viewTab, setViewTab] = useState("code");
   const [openIds, setOpenIds] = useState(() => activeFileId ? [activeFileId] : []);
@@ -133,6 +134,7 @@ export default function EditorTabs({
               onCursorMove={onCursorMove}
               initialScrollTop={scrollPositions.current[activeFileId] || 0}
               onScroll={(top) => handleEditorScroll(activeFileId, top)}
+              editorPrefs={editorPrefs}
             />
             <DebugOverlay
               session={debugSession}
