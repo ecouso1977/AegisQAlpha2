@@ -25,6 +25,7 @@ import EditorTabs from "../components/ide/EditorTabs";
 import TestingPanel from "../components/ide/TestingPanel";
 import SettingsModal from "../components/ide/SettingsModal";
 import { loadEditorPrefs } from "../components/ide/SettingsModal";
+import VersionControlPanel from "../components/ide/VersionControlPanel";
 
 const DEFAULT_FILES = [
   {
@@ -347,6 +348,16 @@ export default function IDE() {
             onApplyDiff={(fileId, newContent) => {
               setFiles((prev) => prev.map((f) => f.id === fileId ? { ...f, content: newContent } : f));
               setActiveFileId(fileId);
+              setActiveTab("Code");
+            }}
+          />
+        )}
+        {activityTab === "vcs" && (
+          <VersionControlPanel
+            files={files}
+            onRevert={(reverted, snap) => {
+              setFiles(reverted);
+              setActiveFileId(reverted[0]?.id || null);
               setActiveTab("Code");
             }}
           />

@@ -1,9 +1,10 @@
-import { Files, Search, GitBranch, Bug, Settings } from "lucide-react";
+import { Files, Search, GitBranch, Bug, Settings, History } from "lucide-react";
 
 const ITEMS = [
   { id: "explorer", icon: Files, label: "Explorer" },
   { id: "search", icon: Search, label: "Search" },
   { id: "git", icon: GitBranch, label: "Source Control" },
+  { id: "vcs", icon: History, label: "Version Control" },
   { id: "debug", icon: Bug, label: "Debug" },
 ];
 
