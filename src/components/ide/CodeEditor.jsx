@@ -1,4 +1,6 @@
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, useCallback, useRef as useDebounceRef } from "react";
+import { base44 } from "@/api/base44Client";
+import { Loader2 } from "lucide-react";
 import { SUGGESTIONS, KIND_COLORS, KIND_LABELS } from "./pythonSuggestions";
 
 const PYTHON_KEYWORDS = [
@@ -36,6 +38,10 @@ export default function CodeEditor({ file, onChange, breakpoints = new Set(), on
   const textareaRef = useRef(null);
   const highlightRef = useRef(null);
   const [autocomplete, setAutocomplete] = useState({ visible: false, items: [], index: 0, pos: { top: 0, left: 0 }, word: "" });
+  const [aiSuggestion, setAiSuggestion] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const aiDebounceRef = useRef(null);
+  const lastCursorRef = useRef(0);
 
   const syncScroll = () => {
     if (highlightRef.current && textareaRef.current) {
@@ -96,6 +102,22 @@ export default function CodeEditor({ file, onChange, breakpoints = new Set(), on
   }, [onChange]);
 
   const handleKeyDown = (e) => {
+    // Accept AI suggestion with Tab when no autocomplete
+    if (e.key === "Tab" && aiSuggestion && !autocomplete.visible) {
+      e.preventDefault();
+      const ta = textareaRef.current;
+      const { value, selectionStart } = ta;
+      const newVal = value.slice(0, selectionStart) + aiSuggestion + value.slice(selectionStart);
+      onChange(newVal);
+      setAiSuggestion("");
+      const newPos = selectionStart + aiSuggestion.length;
+      setTimeout(() => { ta.selectionStart = ta.selectionEnd = newPos; }, 0);
+      return;
+    }
+    if (e.key === "Escape" && aiSuggestion) {
+      setAiSuggestion("");
+      return;
+    }
     if (autocomplete.visible) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
@@ -129,15 +151,43 @@ export default function CodeEditor({ file, onChange, breakpoints = new Set(), on
     }
   };
 
+  const fetchAISuggestion = useCallback(async (value, cursor) => {
+    const prefix = value.slice(0, cursor);
+    const lastLine = prefix.split("\n").pop();
+    if (lastLine.trim().length < 3) return;
+    setAiLoading(true);
+    try {
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a Python code autocomplete engine (like GitHub Copilot). Given the code prefix below, suggest ONLY the next 1-3 lines of code that naturally complete it. Output ONLY the raw code continuation — no markdown, no explanation, no backticks, no extra text.
+
+Code so far:
+\`\`\`python
+${prefix}
+\`\`\`
+
+Continuation (raw code only):`,
+      });
+      const suggestion = (result || "").replace(/^```[\w]*\n?|```$/g, "").trimEnd();
+      if (suggestion && lastCursorRef.current === cursor) {
+        setAiSuggestion(suggestion);
+      }
+    } catch {}
+    setAiLoading(false);
+  }, []);
+
   const handleChange = (e) => {
     const { value, selectionStart } = e.target;
     onChange(value);
     showSuggestions(value, selectionStart);
+    setAiSuggestion("");
+    lastCursorRef.current = selectionStart;
+    clearTimeout(aiDebounceRef.current);
+    aiDebounceRef.current = setTimeout(() => fetchAISuggestion(value, selectionStart), 900);
   };
 
   const handleClick = () => {
     const ta = textareaRef.current;
-    if (ta) showSuggestions(ta.value, ta.selectionStart);
+    if (ta) { showSuggestions(ta.value, ta.selectionStart); setAiSuggestion(""); }
   };
 
   const lines = (file?.content || "").split("\n").length;
@@ -183,6 +233,33 @@ export default function CodeEditor({ file, onChange, breakpoints = new Set(), on
 
       {/* Editor area */}
       <div className="relative flex-1 overflow-hidden">
+        {/* AI loading indicator */}
+        {aiLoading && (
+          <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-[#1a1d26]/80 border border-[#2a2d3a] rounded px-2 py-0.5">
+            <Loader2 className="w-2.5 h-2.5 animate-spin text-[#00c896]" />
+            <span className="text-xs text-gray-500">AI</span>
+          </div>
+        )}
+
+        {/* Ghost text suggestion overlay */}
+        {aiSuggestion && !aiLoading && (
+          <div
+            className="absolute inset-0 p-4 leading-6 pointer-events-none overflow-hidden whitespace-pre select-none"
+            style={{ fontFamily: "'Fira Code', 'Cascadia Code', monospace" }}
+          >
+            <span style={{ color: "transparent" }}>{file.content.slice(0, textareaRef.current?.selectionStart ?? 0)}</span><span style={{ color: "#6b7280", opacity: 0.7 }}>{aiSuggestion}</span>
+          </div>
+        )}
+
+        {/* Tab hint */}
+        {aiSuggestion && !aiLoading && (
+          <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-[#1a1d26]/90 border border-[#00c896]/30 rounded px-2 py-0.5">
+            <span className="text-xs text-[#00c896]">Tab</span>
+            <span className="text-xs text-gray-500">accept</span>
+            <span className="text-xs text-gray-600 ml-1">Esc dismiss</span>
+          </div>
+        )}
+
         {/* Highlighted layer */}
         <pre
           ref={highlightRef}
