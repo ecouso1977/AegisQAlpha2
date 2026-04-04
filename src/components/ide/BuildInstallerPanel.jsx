@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Download, Package, CheckCircle, Loader2, Monitor, Apple, Terminal, Plus, Trash2, Settings, ChevronDown, ChevronRight, Shield } from "lucide-react";
+import { Download, Package, CheckCircle, Loader2, Monitor, Apple, Terminal, Plus, Trash2, Settings, ChevronDown, ChevronRight, Shield, Eye, Clock } from "lucide-react";
+import BuildPreviewModal from "./BuildPreviewModal";
+import BuildQueuePanel from "./BuildQueuePanel";
+import BuildHistoryTab from "./BuildHistoryTab";
 
 const BUNDLED_PLUGINS = [
   { id: "ai-copilot", name: "AI Copilot", desc: "Inline code suggestions and chat", size: "12 MB", required: true },
@@ -52,6 +55,7 @@ export default function BuildInstallerPanel() {
   const [createShortcut, setCreateShortcut] = useState(true);
   const [signInstaller, setSignInstaller] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("build"); // "build", "queue", "history"
 
   const togglePlugin = (id) => {
     const plugin = BUNDLED_PLUGINS.find((p) => p.id === id);
@@ -174,8 +178,33 @@ Code Signed: ${signInstaller}
         enabledPlugins={[...enabledPlugins]}
         marketplaceSelected={[...marketplaceSelected]}
       />
-      <div className="flex-1 overflow-y-auto p-6 bg-[#0d0f14]">
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="flex flex-col flex-1 overflow-hidden bg-[#0d0f14]">
+        {/* Tab navigation */}
+        <div className="flex items-center gap-0 border-b border-[#1e2330]">
+          {[
+            { id: "build", label: "Build", icon: Package },
+            { id: "queue", label: "Queue & Schedule", icon: Clock },
+            { id: "history", label: "History", icon: Download },
+          ].map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors text-sm font-medium ${
+                activeTab === id
+                  ? "border-[#00c896] text-[#00c896]"
+                  : "border-transparent text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab content */}
+        {activeTab === "build" && (
+        <div className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <div>
           <h2 className="text-lg font-semibold text-white flex items-center gap-2"><Package className="w-5 h-5 text-[#00c896]" /> Build Installer</h2>
@@ -337,10 +366,20 @@ Code Signed: ${signInstaller}
                 </button>
               </div>
             )}
-          </div>
-        )}
-      </div>
-      </div>
-      </>
-      );
-      }
+            </div>
+            )}
+            </div>
+            </div>
+            )}
+            {activeTab === "queue" && (
+            <BuildQueuePanel
+            appName={appName}
+            appVersion={appVersion}
+            platform={platform}
+            enabledPlugins={[...enabledPlugins]}
+            marketplaceSelected={[...marketplaceSelected]}
+            />
+            )}
+            {activeTab === "history" && <BuildHistoryTab appName={appName} appVersion={appVersion} />}
+            </div>
+            </>

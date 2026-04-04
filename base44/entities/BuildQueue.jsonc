@@ -1,0 +1,85 @@
+{
+  "name": "BuildQueue",
+  "type": "object",
+  "properties": {
+    "app_name": {
+      "type": "string"
+    },
+    "app_version": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "running",
+        "completed",
+        "failed"
+      ]
+    },
+    "scheduled_time": {
+      "type": "string"
+    },
+    "triggered_by": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "webhook",
+        "scheduled"
+      ]
+    },
+    "platform": {
+      "type": "string"
+    },
+    "enabled_plugins": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "marketplace_selected": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "file_url": {
+          "type": "string"
+        },
+        "file_size": {
+          "type": "number"
+        },
+        "error_message": {
+          "type": "string"
+        },
+        "completed_at": {
+          "type": "string"
+        },
+        "duration_ms": {
+          "type": "number"
+        }
+      }
+    },
+    "webhook_token": {
+      "type": "string"
+    },
+    "is_recurring": {
+      "type": "boolean"
+    },
+    "recurrence_pattern": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "app_name",
+    "app_version",
+    "status",
+    "platform"
+  ]
+}
