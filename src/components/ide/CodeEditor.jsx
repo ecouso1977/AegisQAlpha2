@@ -34,7 +34,7 @@ function getWordAtCursor(text, cursorPos) {
   return match ? match[0] : "";
 }
 
-export default function CodeEditor({ file, onChange, breakpoints = new Set(), onToggleBreakpoint, debugLine = null }) {
+export default function CodeEditor({ file, onChange, breakpoints = new Set(), onToggleBreakpoint, debugLine = null, remoteCursors = [], onCursorMove }) {
   const textareaRef = useRef(null);
   const highlightRef = useRef(null);
   const [autocomplete, setAutocomplete] = useState({ visible: false, items: [], index: 0, pos: { top: 0, left: 0 }, word: "" });
@@ -190,6 +190,14 @@ Continuation (raw code only):`,
     if (ta) { showSuggestions(ta.value, ta.selectionStart); setAiSuggestion(""); }
   };
 
+  const handleKeyUp = (e) => {
+    if (!onCursorMove) return;
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const lines = ta.value.slice(0, ta.selectionStart).split("\n");
+    onCursorMove(lines.length, lines[lines.length - 1].length);
+  };
+
   const lines = (file?.content || "").split("\n").length;
 
   if (!file) {
@@ -269,12 +277,30 @@ Continuation (raw code only):`,
           dangerouslySetInnerHTML={{ __html: highlight(file.content) + "\n" }}
         />
         {/* Textarea */}
+        {remoteCursors.map((cursor, i) => {
+          const lineH = 24;
+          const charW = 9.6;
+          const top = (cursor.line - 1) * lineH + 4;
+          const left = cursor.col * charW;
+          return (
+            <div key={i} className="absolute pointer-events-none z-20" style={{ top, left }}>
+              <div className="w-0.5 h-5 absolute" style={{ backgroundColor: cursor.color }} />
+              <div
+                className="absolute -top-5 left-1 text-[9px] font-bold px-1 rounded whitespace-nowrap"
+                style={{ backgroundColor: cursor.color, color: "#000" }}
+              >
+                {cursor.user_name || cursor.user_email}
+              </div>
+            </div>
+          );
+        })}
         <textarea
           ref={textareaRef}
           value={file.content}
           onChange={handleChange}
           onScroll={syncScroll}
           onKeyDown={handleKeyDown}
+          onKeyUp={handleKeyUp}
           onClick={handleClick}
           onBlur={() => setTimeout(() => setAutocomplete((a) => ({ ...a, visible: false })), 150)}
           spellCheck={false}

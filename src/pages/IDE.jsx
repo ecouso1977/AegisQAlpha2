@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
+import { useAuth } from "@/lib/AuthContext";
+import { useCollabSession } from "../hooks/useCollabSession";
 import FileExplorer from "../components/ide/FileExplorer";
 import CodeEditor from "../components/ide/CodeEditor";
 import Terminal from "../components/ide/Terminal";
@@ -15,6 +17,7 @@ import DebugPanel from "../components/ide/DebugPanel";
 import GitPanel from "../components/ide/GitPanel";
 import MarketplacePanel from "../components/ide/MarketplacePanel";
 import LivePreviewPanel from "../components/ide/LivePreviewPanel";
+import CollabBar from "../components/ide/CollabBar";
 import TestingPanel from "../components/ide/TestingPanel";
 
 const DEFAULT_FILES = [
@@ -106,6 +109,7 @@ print('__AQ_DEBUG__:' + __json__.dumps(__debug_steps__))
 `;
 
 export default function IDE() {
+  const { currentUser } = useAuth();
   const [files, setFiles] = useState(DEFAULT_FILES);
   const [activeFileId, setActiveFileId] = useState("1");
   const [terminalOutput, setTerminalOutput] = useState([
@@ -120,6 +124,21 @@ export default function IDE() {
   const [breakpoints, setBreakpoints] = useState(new Set());
   const [debugSession, setDebugSession] = useState(null);
   const [isDebugging, setIsDebugging] = useState(false);
+  const collabContentRef = useRef(false);
+
+  const handleRemoteContent = useCallback((content, isRemote) => {
+    if (isRemote) {
+      collabContentRef.current = true;
+      setFiles((prev) => prev.map((f) => f.id === activeFileId ? { ...f, content } : f));
+      setTimeout(() => { collabContentRef.current = false; }, 100);
+    }
+  }, [activeFileId]);
+
+  const collab = useCollabSession({
+    activeFile: files.find((f) => f.id === activeFileId),
+    onContentChange: handleRemoteContent,
+    currentUser,
+  });
 
   const toggleBreakpoint = (line) => {
     setBreakpoints((prev) => {
@@ -221,6 +240,9 @@ export default function IDE() {
 
   const updateFileContent = (content) => {
     setFiles((prev) => prev.map((f) => (f.id === activeFileId ? { ...f, content } : f)));
+    if (collab.isConnected && !collabContentRef.current) {
+      collab.pushContent(content);
+    }
   };
 
   const addFile = (name) => {
@@ -268,6 +290,14 @@ export default function IDE() {
 
   return (
     <div className="flex flex-col h-screen bg-[#0d0f14] text-gray-100 overflow-hidden">
+      <CollabBar
+        sessionId={collab.sessionId}
+        participants={collab.participants}
+        onJoin={collab.join}
+        onLeave={collab.leave}
+        isConnected={collab.isConnected}
+        currentUser={currentUser}
+      />
       <IDEHeader
         activeFile={activeFile}
         isRunning={isRunning}
@@ -313,6 +343,8 @@ export default function IDE() {
                 breakpoints={breakpoints}
                 onToggleBreakpoint={toggleBreakpoint}
                 debugLine={debugLine || null}
+                remoteCursors={collab.remoteCursors}
+                onCursorMove={collab.isConnected ? collab.pushCursor : null}
               />
               <Terminal output={terminalOutput} onClear={clearTerminal} isRunning={isRunning} />
             </>
@@ -326,6 +358,8 @@ export default function IDE() {
                   breakpoints={breakpoints}
                   onToggleBreakpoint={toggleBreakpoint}
                   debugLine={debugLine || null}
+                  remoteCursors={collab.remoteCursors}
+                  onCursorMove={collab.isConnected ? collab.pushCursor : null}
                 />
               </div>
               <div className="w-72 shrink-0 border-l border-[#1e2330] overflow-hidden flex flex-col">
