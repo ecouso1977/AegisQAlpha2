@@ -103,6 +103,43 @@ export default function BuildInstallerPanel() {
 
   function now() { return new Date().toLocaleTimeString(); }
 
+  const downloadInstaller = () => {
+    const filename = `${appName.replace(/\s+/g, "-")}-${appVersion}-setup${platform.ext}`;
+    const content = [
+      `; ${appName} v${appVersion} Installer Manifest`,
+      `; Platform: ${platform.label}`,
+      `; Generated: ${new Date().toISOString()}`,
+      `; Size: ~${totalSizeMb} MB`,
+      "",
+      "[App]",
+      `Name=${appName}`,
+      `Version=${appVersion}`,
+      `Platform=${platform.label}`,
+      "",
+      "[Plugins]",
+      ...[...enabledPlugins].map((id) => {
+        const p = BUNDLED_PLUGINS.find((p) => p.id === id);
+        return p ? `${p.id}=${p.name} (${p.size})` : "";
+      }),
+      ...[...marketplaceSelected].map((id) => {
+        const p = OPTIONAL_MARKETPLACE.find((p) => p.id === id);
+        return p ? `${p.id}=${p.name} (${p.size}) [marketplace]` : "";
+      }),
+      "",
+      "[Options]",
+      `AllowRuntimePlugins=${allowRuntimePlugins}`,
+      `CreateShortcut=${createShortcut}`,
+      `SignInstaller=${signInstaller}`,
+    ].join("\n");
+    const blob = new Blob([content], { type: "application/octet-stream" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="flex-1 overflow-y-auto p-6 bg-[#0d0f14]">
       <div className="max-w-3xl mx-auto space-y-6">
@@ -251,7 +288,7 @@ export default function BuildInstallerPanel() {
             </div>
             {buildDone && (
               <div className="px-4 pb-4">
-                <button className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#00c896] hover:bg-[#00b084] text-black text-sm font-bold rounded-lg transition-colors mt-2">
+                <button onClick={downloadInstaller} className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#00c896] hover:bg-[#00b084] text-black text-sm font-bold rounded-lg transition-colors mt-2">
                   <Download className="w-4 h-4" /> Download {appName}-{appVersion}{platform.ext}
                 </button>
               </div>
