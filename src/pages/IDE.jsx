@@ -349,6 +349,9 @@ export default function IDE() {
           {activeTab === "Code" && (
             <EditorTabs
               activeFile={activeFile}
+              activeFileId={activeFileId}
+              files={files}
+              onSelectFile={(id) => { setActiveFileId(id); }}
               onChange={updateFileContent}
               breakpoints={breakpoints}
               onToggleBreakpoint={toggleBreakpoint}
@@ -358,7 +361,6 @@ export default function IDE() {
               terminalOutput={terminalOutput}
               onClear={clearTerminal}
               isRunning={isRunning}
-              files={files}
               collabSession={collab}
               onRun={runCode}
             />

@@ -34,7 +34,7 @@ function getWordAtCursor(text, cursorPos) {
   return match ? match[0] : "";
 }
 
-export default function CodeEditor({ file, onChange, breakpoints = new Set(), onToggleBreakpoint, debugLine = null, remoteCursors = [], onCursorMove }) {
+export default function CodeEditor({ file, onChange, breakpoints = new Set(), onToggleBreakpoint, debugLine = null, remoteCursors = [], onCursorMove, initialScrollTop = 0, onScroll }) {
   const textareaRef = useRef(null);
   const highlightRef = useRef(null);
   const [autocomplete, setAutocomplete] = useState({ visible: false, items: [], index: 0, pos: { top: 0, left: 0 }, word: "" });
@@ -47,8 +47,16 @@ export default function CodeEditor({ file, onChange, breakpoints = new Set(), on
     if (highlightRef.current && textareaRef.current) {
       highlightRef.current.scrollTop = textareaRef.current.scrollTop;
       highlightRef.current.scrollLeft = textareaRef.current.scrollLeft;
+      onScroll?.(textareaRef.current.scrollTop);
     }
   };
+
+  useEffect(() => {
+    if (textareaRef.current && initialScrollTop) {
+      textareaRef.current.scrollTop = initialScrollTop;
+      if (highlightRef.current) highlightRef.current.scrollTop = initialScrollTop;
+    }
+  }, []);
 
   const computeCaretCoords = useCallback(() => {
     const ta = textareaRef.current;
