@@ -118,7 +118,14 @@ print('__AQ_DEBUG__:' + __json__.dumps(__debug_steps__))
 export default function IDE() {
   const { currentUser } = useAuth();
   const [files, setFiles] = useState(DEFAULT_FILES);
-  const [activeFileId, setActiveFileId] = useState("1");
+  const [activeFileId, setActiveFileId] = useState(() => {
+    return localStorage.getItem("aq_active_file") || "1";
+  });
+
+  // Persist active file
+  useEffect(() => {
+    if (activeFileId) localStorage.setItem("aq_active_file", activeFileId);
+  }, [activeFileId]);
   const [terminalOutput, setTerminalOutput] = useState([
     { type: "info", text: "🚀 Aegis Quantum Workbench Ready" },
     { type: "info", text: "Python 3.10 | Piston Runtime v2" },

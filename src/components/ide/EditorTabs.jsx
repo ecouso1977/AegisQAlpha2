@@ -28,7 +28,18 @@ export default function EditorTabs({
   editorPrefs,
 }) {
   const [viewTab, setViewTab] = useState("code");
-  const [openIds, setOpenIds] = useState(() => activeFileId ? [activeFileId] : []);
+  const [openIds, setOpenIds] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("aq_open_tabs") || "null");
+      if (Array.isArray(saved) && saved.length > 0) return saved;
+    } catch {}
+    return activeFileId ? [activeFileId] : [];
+  });
+
+  // Persist open tabs to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("aq_open_tabs", JSON.stringify(openIds));
+  }, [openIds]);
   const [refactorOpen, setRefactorOpen] = useState(false);
   const scrollPositions = useRef({});
 
