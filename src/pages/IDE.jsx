@@ -22,6 +22,7 @@ import CollabBar from "../components/ide/CollabBar";
 import RefactorPanel from "../components/ide/RefactorPanel";
 import BuildInstallerPanel from "../components/ide/BuildInstallerPanel";
 import BuildMonitoringDashboard from "../components/ide/BuildMonitoringDashboard";
+import ReleasePanel from "../components/ide/ReleasePanel";
 import CommunityPluginsBrowser from "../components/ide/CommunityPluginsBrowser";
 import EditorTabs from "../components/ide/EditorTabs";
 import TestingPanel from "../components/ide/TestingPanel";
@@ -99,7 +100,7 @@ print("Sorted:", sorted(data))
   },
 ];
 
-const MAIN_TABS = ["Code", "Preview", "Debug", "Testing", "Refactor", "Infra", "Deploy", "GCP", "Cloud", "API Vault", "Plugins", "Integrations", "Marketplace", "Build Installer", "Build Monitor", "Community Plugins"];
+const MAIN_TABS = ["Code", "Preview", "Debug", "Testing", "Refactor", "Infra", "Deploy", "GCP", "Cloud", "API Vault", "Plugins", "Integrations", "Marketplace", "Build Installer", "Build Monitor", "Community Plugins", "Release"];
 
 const DEBUGGER_INJECTOR = `
 import sys as __sys__, json as __json__
@@ -141,6 +142,7 @@ export default function IDE() {
   const [activityTab, setActivityTab] = useState("explorer");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [editorPrefs, setEditorPrefs] = useState(loadEditorPrefs);
+  const [appVersion, setAppVersion] = useState("1.0.0");
 
   useEffect(() => {
     const handler = (e) => setEditorPrefs(e.detail);
@@ -453,11 +455,12 @@ export default function IDE() {
           {activeTab === "Plugins" && <PluginsPanel />}
           {activeTab === "Marketplace" && <MarketplacePanel />}
           {activeTab === "Integrations" && <IntegrationsPanel />}
-          {activeTab === "Build Installer" && <BuildInstallerPanel files={files} onFileChange={updateFileContent} />}
+          {activeTab === "Build Installer" && <BuildInstallerPanel files={files} onFileChange={updateFileContent} onBuildSuccess={() => setActiveTab("Release")} />}
           {activeTab === "Build Monitor" && <BuildMonitoringDashboard />}
           {activeTab === "Community Plugins" && <CommunityPluginsBrowser selectedPlugins={[...enabledPlugins]} onTogglePlugin={(pluginId) => {
             setEnabledPlugins((prev) => prev.includes(pluginId) ? prev.filter((p) => p !== pluginId) : [...prev, pluginId]);
           }} />}
+          {activeTab === "Release" && <ReleasePanel currentVersion={appVersion} onVersionUpdate={setAppVersion} />}
           {activeTab === "Testing" && <TestingPanel files={files} />}
           {activeTab === "Refactor" && <RefactorPanel file={activeFile} />}
           {activeTab === "GCP" && <GCPPanel activeFile={activeFile} />}

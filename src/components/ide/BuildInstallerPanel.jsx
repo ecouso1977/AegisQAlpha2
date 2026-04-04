@@ -33,7 +33,7 @@ const PLATFORM_CONFIGS = [
   },
 ];
 
-export default function BuildInstallerPanel({ files = [], onFileChange }) {
+export default function BuildInstallerPanel({ files = [], onFileChange, onBuildSuccess }) {
   const [buildingPlatforms, setBuildingPlatforms] = useState(new Set());
   const [builds, setBuilds] = useState({});
   const [projectFiles, setProjectFiles] = useState(files);
@@ -50,6 +50,7 @@ export default function BuildInstallerPanel({ files = [], onFileChange }) {
     try {
       const response = await base44.functions.invoke('buildInstallers', { platform: platform.id });
       setBuilds((prev) => ({ ...prev, [platform.id]: response.data }));
+      if (onBuildSuccess) onBuildSuccess();
     } catch (error) {
       console.error('Build failed:', error);
     } finally {
