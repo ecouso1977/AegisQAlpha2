@@ -21,6 +21,7 @@ import LivePreviewPanel from "../components/ide/LivePreviewPanel";
 import CollabBar from "../components/ide/CollabBar";
 import RefactorPanel from "../components/ide/RefactorPanel";
 import BuildInstallerPanel from "../components/ide/BuildInstallerPanel";
+import BuildMonitoringDashboard from "../components/ide/BuildMonitoringDashboard";
 import EditorTabs from "../components/ide/EditorTabs";
 import TestingPanel from "../components/ide/TestingPanel";
 import SettingsModal from "../components/ide/SettingsModal";
@@ -97,7 +98,7 @@ print("Sorted:", sorted(data))
   },
 ];
 
-const MAIN_TABS = ["Code", "Preview", "Debug", "Testing", "Refactor", "Infra", "Deploy", "GCP", "Cloud", "API Vault", "Plugins", "Integrations", "Marketplace", "Build Installer"];
+const MAIN_TABS = ["Code", "Preview", "Debug", "Testing", "Refactor", "Infra", "Deploy", "GCP", "Cloud", "API Vault", "Plugins", "Integrations", "Marketplace", "Build Installer", "Build Monitor"];
 
 const DEBUGGER_INJECTOR = `
 import sys as __sys__, json as __json__
@@ -452,6 +453,7 @@ export default function IDE() {
           {activeTab === "Marketplace" && <MarketplacePanel />}
           {activeTab === "Integrations" && <IntegrationsPanel />}
           {activeTab === "Build Installer" && <BuildInstallerPanel />}
+          {activeTab === "Build Monitor" && <BuildMonitoringDashboard />}
           {activeTab === "Testing" && <TestingPanel files={files} />}
           {activeTab === "Refactor" && <RefactorPanel file={activeFile} />}
           {activeTab === "GCP" && <GCPPanel activeFile={activeFile} />}
