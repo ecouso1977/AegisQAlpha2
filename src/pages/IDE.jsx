@@ -300,7 +300,7 @@ export default function IDE() {
   const clearTerminal = () => setTerminalOutput([]);
 
   return (
-    <div className="flex flex-col h-screen bg-[#0d0f14] text-gray-100 overflow-hidden">
+    <div id="ide-root" className="ide-dark flex flex-col h-screen bg-[#0d0f14] text-gray-100 overflow-hidden">
       <CollabBar
         sessionId={collab.sessionId}
         participants={collab.participants}

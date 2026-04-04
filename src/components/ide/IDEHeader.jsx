@@ -7,19 +7,18 @@ export default function IDEHeader({ activeFile, isRunning, onRun, chatOpen, onTo
   const [dark, setDark] = useState(true);
 
   useEffect(() => {
+    const root = document.getElementById("ide-root") || document.body;
     if (dark) {
+      root.classList.add("ide-dark");
+      root.classList.remove("ide-light");
       document.documentElement.classList.add("dark");
       document.documentElement.style.colorScheme = "dark";
     } else {
+      root.classList.add("ide-light");
+      root.classList.remove("ide-dark");
       document.documentElement.classList.remove("dark");
       document.documentElement.style.colorScheme = "light";
-      document.body.style.background = "#f3f4f6";
-      document.body.style.color = "#111";
     }
-    return () => {
-      document.body.style.background = "";
-      document.body.style.color = "";
-    };
   }, [dark]);
 
   const downloadZip = async () => {
@@ -85,12 +84,29 @@ export default function IDEHeader({ activeFile, isRunning, onRun, chatOpen, onTo
             <Download className="w-4 h-4" />
           </button>
 
-          <button
-            onClick={() => setDark((v) => !v)}
-            className="p-1.5 text-gray-400 hover:text-gray-200 bg-[#1a1d26] border border-[#2a2d3a] rounded transition-colors"
-          >
-            {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
+          {/* Theme switcher pill */}
+          <div className="flex items-center bg-[#1a1d26] border border-[#2a2d3a] rounded-full p-0.5 gap-0.5">
+            <button
+              onClick={() => setDark(false)}
+              title="Light theme"
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                !dark ? "bg-yellow-400 text-black shadow" : "text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              <Sun className="w-3.5 h-3.5" />
+              Light
+            </button>
+            <button
+              onClick={() => setDark(true)}
+              title="Dark theme"
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                dark ? "bg-[#2a3a4a] text-[#00c896] shadow" : "text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              <Moon className="w-3.5 h-3.5" />
+              Dark
+            </button>
+          </div>
 
           <button
             onClick={onToggleChat}

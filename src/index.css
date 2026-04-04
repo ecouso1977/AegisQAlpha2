@@ -86,3 +86,76 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ── IDE Light Theme ────────────────────────────── */
+.ide-light {
+  --ide-bg:        #f0f2f5;
+  --ide-surface:   #ffffff;
+  --ide-surface2:  #e8eaed;
+  --ide-border:    #d0d3d8;
+  --ide-text:      #1a1d26;
+  --ide-muted:     #6b7280;
+  --ide-accent:    #00a87a;
+}
+
+.ide-dark {
+  --ide-bg:        #0d0f14;
+  --ide-surface:   #0a0c11;
+  --ide-surface2:  #1a1d26;
+  --ide-border:    #1e2330;
+  --ide-text:      #e5e7eb;
+  --ide-muted:     #6b7280;
+  --ide-accent:    #00c896;
+}
+
+/* Apply theme vars to IDE shell */
+.ide-light .ide-bg      { background-color: var(--ide-bg) !important; }
+.ide-light .ide-surface  { background-color: var(--ide-surface) !important; }
+.ide-light .ide-surface2 { background-color: var(--ide-surface2) !important; }
+.ide-light .ide-border   { border-color: var(--ide-border) !important; }
+.ide-light .ide-text     { color: var(--ide-text) !important; }
+
+/* Broad light-mode overrides for the IDE shell */
+.ide-light [class*="bg-\[\#0d0f14\]"],
+.ide-light [class*="bg-\[\#0a0c11\]"],
+.ide-light [class*="bg-\[\#0e1018\]"],
+.ide-light [class*="bg-\[\#080a0f\]"] {
+  background-color: var(--ide-surface) !important;
+  color: var(--ide-text) !important;
+}
+
+.ide-light [class*="bg-\[\#1a1d26\]"],
+.ide-light [class*="bg-\[\#0a1a0e\]"],
+.ide-light [class*="bg-\[\#1a0a0a\]"],
+.ide-light [class*="bg-\[\#1a2a3a\]"] {
+  background-color: var(--ide-surface2) !important;
+  color: var(--ide-text) !important;
+}
+
+.ide-light [class*="border-\[\#1e2330\]"],
+.ide-light [class*="border-\[\#2a2d3a\]"],
+.ide-light [class*="border-\[\#3a3d4a\]"] {
+  border-color: var(--ide-border) !important;
+}
+
+.ide-light [class*="text-gray-100"],
+.ide-light [class*="text-gray-200"],
+.ide-light [class*="text-white"] {
+  color: var(--ide-text) !important;
+}
+
+.ide-light [class*="text-gray-400"],
+.ide-light [class*="text-gray-500"],
+.ide-light [class*="text-gray-600"] {
+  color: var(--ide-muted) !important;
+}
+
+.ide-light textarea,
+.ide-light pre {
+  background-color: #f8fafc !important;
+  color: #1a1d26 !important;
+}
+
+.ide-light .caret-white {
+  caret-color: #00a87a !important;
+}
