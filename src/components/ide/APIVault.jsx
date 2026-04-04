@@ -35,6 +35,7 @@ export default function APIVault() {
   const saveKey = () => {
     if (!form.name || !form.key) return;
     setKeys((p) => [...p, { id: Date.now().toString(), ...form, visible: false, injected: false }]);
+    localStorage.setItem(`aq_apikey_${form.provider}`, form.key);
     setForm({ provider: "openai", name: "", key: "" });
     setAdding(false);
   };
