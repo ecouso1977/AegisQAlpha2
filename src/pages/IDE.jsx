@@ -259,6 +259,13 @@ export default function IDE() {
     }
   };
 
+  const renameFile = (id, newName) => {
+    let name = newName.trim();
+    if (!name) return;
+    if (!name.includes(".")) name += ".py";
+    setFiles((prev) => prev.map((f) => f.id === id ? { ...f, name } : f));
+  };
+
   const runCode = async () => {
     if (!activeFile) return;
     setActiveTab("Code");
@@ -330,6 +337,8 @@ export default function IDE() {
             onSelect={(id) => { setActiveFileId(id); setActiveTab("Code"); }}
             onAdd={addFile}
             onDelete={deleteFile}
+            onRename={renameFile}
+            collabSession={collab}
           />
         )}
 
