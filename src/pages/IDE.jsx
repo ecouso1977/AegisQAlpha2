@@ -19,6 +19,7 @@ import MarketplacePanel from "../components/ide/MarketplacePanel";
 import LivePreviewPanel from "../components/ide/LivePreviewPanel";
 import CollabBar from "../components/ide/CollabBar";
 import RefactorPanel from "../components/ide/RefactorPanel";
+import EditorTabs from "../components/ide/EditorTabs";
 import TestingPanel from "../components/ide/TestingPanel";
 
 const DEFAULT_FILES = [
@@ -89,7 +90,7 @@ print("Sorted:", sorted(data))
   },
 ];
 
-const MAIN_TABS = ["Code", "Debug", "Live Preview", "Testing", "Refactor", "Infra", "Deploy", "Cloud", "API Vault", "Plugins", "Marketplace"];
+const MAIN_TABS = ["Code", "Debug", "Testing", "Refactor", "Infra", "Deploy", "Cloud", "API Vault", "Plugins", "Marketplace"];
 
 const DEBUGGER_INJECTOR = `
 import sys as __sys__, json as __json__
@@ -346,18 +347,21 @@ export default function IDE() {
         {/* Main Content */}
         <div className="flex flex-col flex-1 overflow-hidden">
           {activeTab === "Code" && (
-            <>
-              <CodeEditor
-                file={activeFile}
-                onChange={updateFileContent}
-                breakpoints={breakpoints}
-                onToggleBreakpoint={toggleBreakpoint}
-                debugLine={debugLine || null}
-                remoteCursors={collab.remoteCursors}
-                onCursorMove={collab.isConnected ? collab.pushCursor : null}
-              />
-              <Terminal output={terminalOutput} onClear={clearTerminal} isRunning={isRunning} />
-            </>
+            <EditorTabs
+              activeFile={activeFile}
+              onChange={updateFileContent}
+              breakpoints={breakpoints}
+              onToggleBreakpoint={toggleBreakpoint}
+              debugLine={debugLine || null}
+              remoteCursors={collab.remoteCursors}
+              onCursorMove={collab.isConnected ? collab.pushCursor : null}
+              terminalOutput={terminalOutput}
+              onClear={clearTerminal}
+              isRunning={isRunning}
+              files={files}
+              collabSession={collab}
+              onRun={runCode}
+            />
           )}
           {activeTab === "Debug" && (
             <div className="flex flex-1 overflow-hidden">
@@ -392,7 +396,6 @@ export default function IDE() {
           {activeTab === "API Vault" && <APIVault />}
           {activeTab === "Plugins" && <PluginsPanel />}
           {activeTab === "Marketplace" && <MarketplacePanel />}
-          {activeTab === "Live Preview" && <LivePreviewPanel file={activeFile} />}
           {activeTab === "Testing" && <TestingPanel files={files} />}
           {activeTab === "Refactor" && <RefactorPanel file={activeFile} />}
         </div>
