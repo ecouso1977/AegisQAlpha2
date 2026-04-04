@@ -21,7 +21,7 @@ export default function StatusBar({ activeFile, isRunning }) {
           <Wifi style={{ width: 12, height: 12 }} />
           <span>Piston Runtime</span>
         </div>
-        <span>Aegis Quantum v1.0</span>
+        <span>Aegis Quantum v1.0 · By NOBISYS</span>
       </div>
     </div>
   );
