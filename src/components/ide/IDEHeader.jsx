@@ -1,10 +1,26 @@
 import { Play, MessageSquare, Loader2, X, Sun, Moon, Store, Download } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import JSZip from "jszip";
 import NavMenu from "./NavMenu";
 
 export default function IDEHeader({ activeFile, isRunning, onRun, chatOpen, onToggleChat, activeTab, setActiveTab, tabs, onNavAction, files }) {
   const [dark, setDark] = useState(true);
+
+  useEffect(() => {
+    if (dark) {
+      document.documentElement.classList.add("dark");
+      document.documentElement.style.colorScheme = "dark";
+    } else {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.style.colorScheme = "light";
+      document.body.style.background = "#f3f4f6";
+      document.body.style.color = "#111";
+    }
+    return () => {
+      document.body.style.background = "";
+      document.body.style.color = "";
+    };
+  }, [dark]);
 
   const downloadZip = async () => {
     const zip = new JSZip();
@@ -36,10 +52,16 @@ export default function IDEHeader({ activeFile, isRunning, onRun, chatOpen, onTo
           <NavMenu onAction={onNavAction} />
         </div>
 
-        {/* Center: active file pill */}
-        <div className="flex items-center gap-2">
+        {/* Center: branding + active file */}
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="text-xs font-bold tracking-widest text-[#00c896] uppercase select-none">
+            Aegis Quantum IDE
+          </span>
+          <span className="text-[9px] tracking-[0.2em] text-gray-500 uppercase select-none">
+            by Nobisys Corporation
+          </span>
           {activeFile && activeTab === "Code" && (
-            <span className="text-xs text-gray-400 bg-[#1a1d26] px-3 py-1 rounded border border-[#2a2d3a]">
+            <span className="text-xs text-gray-500 bg-[#1a1d26] px-2 py-0.5 rounded border border-[#2a2d3a] mt-0.5">
               {activeFile.name}
             </span>
           )}
