@@ -22,6 +22,7 @@ import CollabBar from "../components/ide/CollabBar";
 import RefactorPanel from "../components/ide/RefactorPanel";
 import BuildInstallerPanel from "../components/ide/BuildInstallerPanel";
 import BuildMonitoringDashboard from "../components/ide/BuildMonitoringDashboard";
+import CommunityPluginsBrowser from "../components/ide/CommunityPluginsBrowser";
 import EditorTabs from "../components/ide/EditorTabs";
 import TestingPanel from "../components/ide/TestingPanel";
 import SettingsModal from "../components/ide/SettingsModal";
@@ -98,7 +99,7 @@ print("Sorted:", sorted(data))
   },
 ];
 
-const MAIN_TABS = ["Code", "Preview", "Debug", "Testing", "Refactor", "Infra", "Deploy", "GCP", "Cloud", "API Vault", "Plugins", "Integrations", "Marketplace", "Build Installer", "Build Monitor"];
+const MAIN_TABS = ["Code", "Preview", "Debug", "Testing", "Refactor", "Infra", "Deploy", "GCP", "Cloud", "API Vault", "Plugins", "Integrations", "Marketplace", "Build Installer", "Build Monitor", "Community Plugins"];
 
 const DEBUGGER_INJECTOR = `
 import sys as __sys__, json as __json__
@@ -454,6 +455,9 @@ export default function IDE() {
           {activeTab === "Integrations" && <IntegrationsPanel />}
           {activeTab === "Build Installer" && <BuildInstallerPanel />}
           {activeTab === "Build Monitor" && <BuildMonitoringDashboard />}
+          {activeTab === "Community Plugins" && <CommunityPluginsBrowser selectedPlugins={[...enabledPlugins]} onTogglePlugin={(pluginId) => {
+            setEnabledPlugins((prev) => prev.includes(pluginId) ? prev.filter((p) => p !== pluginId) : [...prev, pluginId]);
+          }} />}
           {activeTab === "Testing" && <TestingPanel files={files} />}
           {activeTab === "Refactor" && <RefactorPanel file={activeFile} />}
           {activeTab === "GCP" && <GCPPanel activeFile={activeFile} />}
