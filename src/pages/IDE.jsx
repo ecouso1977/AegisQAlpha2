@@ -26,6 +26,7 @@ import TestingPanel from "../components/ide/TestingPanel";
 import SettingsModal from "../components/ide/SettingsModal";
 import { loadEditorPrefs } from "../components/ide/SettingsModal";
 import VersionControlPanel from "../components/ide/VersionControlPanel";
+import GCPPanel from "../components/ide/GCPPanel";
 
 const DEFAULT_FILES = [
   {
@@ -95,7 +96,7 @@ print("Sorted:", sorted(data))
   },
 ];
 
-const MAIN_TABS = ["Code", "Debug", "Testing", "Refactor", "Infra", "Deploy", "Cloud", "API Vault", "Plugins", "Integrations", "Marketplace", "Build Installer"];
+const MAIN_TABS = ["Code", "Debug", "Testing", "Refactor", "Infra", "Deploy", "GCP", "Cloud", "API Vault", "Plugins", "Integrations", "Marketplace", "Build Installer"];
 
 const DEBUGGER_INJECTOR = `
 import sys as __sys__, json as __json__
@@ -451,6 +452,7 @@ export default function IDE() {
           {activeTab === "Build Installer" && <BuildInstallerPanel />}
           {activeTab === "Testing" && <TestingPanel files={files} />}
           {activeTab === "Refactor" && <RefactorPanel file={activeFile} />}
+          {activeTab === "GCP" && <GCPPanel activeFile={activeFile} />}
         </div>
 
         {/* AI Chat */}
