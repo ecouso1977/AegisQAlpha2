@@ -20,6 +20,7 @@ import IntegrationsPanel from "../components/ide/IntegrationsPanel";
 import LivePreviewPanel from "../components/ide/LivePreviewPanel";
 import CollabBar from "../components/ide/CollabBar";
 import RefactorPanel from "../components/ide/RefactorPanel";
+import BuildInstallerPanel from "../components/ide/BuildInstallerPanel";
 import EditorTabs from "../components/ide/EditorTabs";
 import TestingPanel from "../components/ide/TestingPanel";
 
@@ -91,7 +92,7 @@ print("Sorted:", sorted(data))
   },
 ];
 
-const MAIN_TABS = ["Code", "Debug", "Testing", "Refactor", "Infra", "Deploy", "Cloud", "API Vault", "Plugins", "Integrations", "Marketplace"];
+const MAIN_TABS = ["Code", "Debug", "Testing", "Refactor", "Infra", "Deploy", "Cloud", "API Vault", "Plugins", "Integrations", "Marketplace", "Build Installer"];
 
 const DEBUGGER_INJECTOR = `
 import sys as __sys__, json as __json__
@@ -400,6 +401,7 @@ export default function IDE() {
           {activeTab === "Plugins" && <PluginsPanel />}
           {activeTab === "Marketplace" && <MarketplacePanel />}
           {activeTab === "Integrations" && <IntegrationsPanel />}
+          {activeTab === "Build Installer" && <BuildInstallerPanel />}
           {activeTab === "Testing" && <TestingPanel files={files} />}
           {activeTab === "Refactor" && <RefactorPanel file={activeFile} />}
         </div>
