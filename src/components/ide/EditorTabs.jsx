@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Code2, Eye, LayoutDashboard, X, FileCode } from "lucide-react";
+import { Code2, Eye, LayoutDashboard, X, FileCode, Wand2 } from "lucide-react";
+import IntelligentRefactorModal from "./IntelligentRefactorModal";
 import CodeEditor from "./CodeEditor";
 import Terminal from "./Terminal";
 import LivePreviewPanel from "./LivePreviewPanel";
@@ -25,6 +26,7 @@ export default function EditorTabs({
 }) {
   const [viewTab, setViewTab] = useState("code");
   const [openIds, setOpenIds] = useState(() => activeFileId ? [activeFileId] : []);
+  const [refactorOpen, setRefactorOpen] = useState(false);
   const scrollPositions = useRef({});
 
   // Auto-open file when active file changes
@@ -86,7 +88,8 @@ export default function EditorTabs({
       </div>
 
       {/* View sub-tab bar */}
-      <div className="flex items-center bg-[#0a0c11] border-b border-[#1e2330] px-3 gap-0.5 shrink-0">
+      <div className="flex items-center bg-[#0a0c11] border-b border-[#1e2330] px-3 gap-0.5 shrink-0 justify-between">
+        <div className="flex items-center gap-0.5">
         {VIEW_TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -101,6 +104,16 @@ export default function EditorTabs({
             {label}
           </button>
         ))}
+        </div>
+        {activeFile && viewTab === "code" && (
+          <button
+            onClick={() => setRefactorOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#1a1d26] border border-[#2a2d3a] text-[#00c896] hover:bg-[#00c896]/10 rounded transition-colors mr-1"
+          >
+            <Wand2 className="w-3 h-3" />
+            Intelligent Refactor
+          </button>
+        )}
       </div>
 
       {/* Tab content */}
@@ -122,6 +135,13 @@ export default function EditorTabs({
         </>
       )}
       {viewTab === "preview" && <LivePreviewPanel file={activeFile} />}
+      {refactorOpen && activeFile && (
+        <IntelligentRefactorModal
+          file={activeFile}
+          onApply={(newContent) => { onChange(newContent); }}
+          onClose={() => setRefactorOpen(false)}
+        />
+      )}
       {viewTab === "dashboard" && (
         <WorkspaceDashboard
           files={files}
