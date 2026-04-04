@@ -1,9 +1,27 @@
-import { Play, MessageSquare, Loader2, X, Sun, Moon, Store } from "lucide-react";
+import { Play, MessageSquare, Loader2, X, Sun, Moon, Store, Download } from "lucide-react";
 import { useState } from "react";
+import JSZip from "jszip";
 import NavMenu from "./NavMenu";
 
-export default function IDEHeader({ activeFile, isRunning, onRun, chatOpen, onToggleChat, activeTab, setActiveTab, tabs, onNavAction }) {
+export default function IDEHeader({ activeFile, isRunning, onRun, chatOpen, onToggleChat, activeTab, setActiveTab, tabs, onNavAction, files }) {
   const [dark, setDark] = useState(true);
+
+  const downloadZip = async () => {
+    const zip = new JSZip();
+    const src = zip.folder("aegis-workspace");
+    (files || []).forEach((f) => src.file(f.name, f.content));
+    const deps = (files || []).reduce((acc, f) => {
+      const matches = [...f.content.matchAll(/^import\s+([\w,\s{}*]+)\s+from\s+['"]([^'"]+)['"]/gm)];
+      matches.forEach(([, , pkg]) => { if (!pkg.startsWith(".")) acc.add(pkg.split("/")[0]); });
+      return acc;
+    }, new Set());
+    src.file("requirements.txt", [...deps].join("\n") || "# No external dependencies detected");
+    src.file("README.md", `# Aegis Quantum Workspace\n\nExported on ${new Date().toLocaleDateString()}\n\n## Files\n${(files||[]).map(f=>"- "+f.name).join("\n")}\n`);
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "aegis-workspace.zip"; a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <header className="flex flex-col bg-[#0a0c11] border-b border-[#1e2330] shrink-0">
@@ -35,6 +53,14 @@ export default function IDEHeader({ activeFile, isRunning, onRun, chatOpen, onTo
           >
             {isRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
             {isRunning ? "Running..." : "Run"}
+          </button>
+
+          <button
+            onClick={downloadZip}
+            title="Download workspace as ZIP"
+            className="p-1.5 text-gray-400 hover:text-[#00c896] bg-[#1a1d26] border border-[#2a2d3a] rounded transition-colors"
+          >
+            <Download className="w-4 h-4" />
           </button>
 
           <button

@@ -277,6 +277,7 @@ export default function IDE() {
         setActiveTab={setActiveTab}
         tabs={MAIN_TABS}
         onNavAction={handleNavAction}
+        files={files}
       />
 
       <div className="flex flex-1 overflow-hidden">
