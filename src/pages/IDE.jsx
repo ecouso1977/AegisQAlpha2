@@ -14,6 +14,7 @@ import PluginsPanel from "../components/ide/PluginsPanel";
 import DebugPanel from "../components/ide/DebugPanel";
 import GitPanel from "../components/ide/GitPanel";
 import MarketplacePanel from "../components/ide/MarketplacePanel";
+import LivePreviewPanel from "../components/ide/LivePreviewPanel";
 
 const DEFAULT_FILES = [
   {
@@ -83,7 +84,7 @@ print("Sorted:", sorted(data))
   },
 ];
 
-const MAIN_TABS = ["Code", "Debug", "Infra", "Deploy", "Cloud", "API Vault", "Plugins", "Marketplace"];
+const MAIN_TABS = ["Code", "Debug", "Live Preview", "Infra", "Deploy", "Cloud", "API Vault", "Plugins", "Marketplace"];
 
 const DEBUGGER_INJECTOR = `
 import sys as __sys__, json as __json__
@@ -345,6 +346,7 @@ export default function IDE() {
           {activeTab === "API Vault" && <APIVault />}
           {activeTab === "Plugins" && <PluginsPanel />}
           {activeTab === "Marketplace" && <MarketplacePanel />}
+          {activeTab === "Live Preview" && <LivePreviewPanel file={activeFile} />}
         </div>
 
         {/* AI Chat */}
